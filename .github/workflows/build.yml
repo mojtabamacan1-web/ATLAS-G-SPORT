@@ -1,17 +1,42 @@
+
 name: Build ATLAS G SPORT APK
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
       - name: Create Android project
+        shell: bash
         run: |
-          mkdir -p app/src/main/java/com/makan/atlasgsport
+          mkdir -p app/src/main/java/com/makan/atlas
           mkdir -p app/src/main/res/values
 
           cat > settings.gradle <<'EOF'
@@ -43,37 +68,50 @@ jobs:
           plugins {
               id 'com.android.application'
           }
+
           android {
-              namespace 'com.makan.atlasgsport'
+              namespace 'com.makan.atlas'
               compileSdk 35
+
               defaultConfig {
-                  applicationId 'com.makan.atlasgsport'
+                  applicationId 'com.makan.atlas'
                   minSdk 23
                   targetSdk 29
                   versionCode 1
                   versionName '1.0'
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
               }
           }
           EOF
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
               <application
                   android:theme="@style/AppTheme"
                   android:label="ATLAS G SPORT"
-                  android:allowBackup="false">
+                  android:allowBackup="false"
+                  android:supportsRtl="true">
+
                   <activity
                       android:name=".MainActivity"
                       android:exported="true">
+
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
+
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.HOME"/>
                           <category android:name="android.intent.category.DEFAULT"/>
                       </intent-filter>
+
                   </activity>
               </application>
           </manifest>
@@ -83,177 +121,165 @@ jobs:
           <resources>
               <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
                   <item name="android:fontFamily">sans</item>
-                  <item name="android:colorAccent">#00D5FF</item>
-                  <item name="android:statusBarColor">#080D14</item>
-                  <item name="android:navigationBarColor">#080D14</item>
+                  <item name="android:colorAccent">#00D9FF</item>
+                  <item name="android:statusBarColor">#080B12</item>
+                  <item name="android:navigationBarColor">#080B12</item>
                   <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowBackground">#080B12</item>
               </style>
           </resources>
           EOF
 
-          cat > app/src/main/java/com/makan/atlasgsport/MainActivity.java <<'EOF'
-          package com.makan.atlasgsport;
+          cat > app/src/main/java/com/makan/atlas/MainActivity.java <<'EOF'
+          package com.makan.atlas;
 
           import android.app.Activity;
           import android.os.Bundle;
           import android.graphics.Color;
-          import android.graphics.Typeface;
           import android.view.Gravity;
+          import android.view.View;
+          import android.widget.Button;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
           import android.content.Intent;
           import android.net.Uri;
-          import android.widget.*;
+          import android.text.format.DateFormat;
           import java.text.SimpleDateFormat;
           import java.util.Date;
           import java.util.Locale;
 
           public class MainActivity extends Activity {
-              LinearLayout page;
+
               TextView clock;
 
-              int cyan = Color.rgb(0,213,255);
-              int white = Color.WHITE;
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
 
-              public void onCreate(Bundle b) {
-                  super.onCreate(b);
-                  page = new LinearLayout(this);
-                  page.setOrientation(LinearLayout.VERTICAL);
-                  page.setGravity(Gravity.CENTER_HORIZONTAL);
-                  page.setPadding(28,30,28,24);
-                  page.setBackgroundColor(Color.rgb(8,13,20));
+                  getWindow().getDecorView().setSystemUiVisibility(
+                      View.SYSTEM_UI_FLAG_FULLSCREEN |
+                      View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                      View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                  );
 
-                  TextView brand = new TextView(this);
-                  brand.setText("ATLAS G SPORT");
-                  brand.setTextColor(cyan);
-                  brand.setTextSize(27);
-                  brand.setTypeface(null, Typeface.BOLD);
-                  brand.setGravity(Gravity.CENTER);
-                  page.addView(brand);
+                  LinearLayout root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setGravity(Gravity.CENTER);
+                  root.setPadding(24, 24, 24, 24);
+                  root.setBackgroundColor(Color.rgb(8, 11, 18));
+
+                  TextView title = new TextView(this);
+                  title.setText("ATLAS G");
+                  title.setTextColor(Color.WHITE);
+                  title.setTextSize(38);
+                  title.setGravity(Gravity.CENTER);
+                  title.setTypeface(null, 1);
+                  root.addView(title);
 
                   TextView edition = new TextView(this);
-                  edition.setText("MAKAN EDITION | SAIPA ATLAS G");
-                  edition.setTextColor(Color.LTGRAY);
-                  edition.setTextSize(12);
+                  edition.setText("SPORT  |  MAKAN EDITION");
+                  edition.setTextColor(Color.rgb(0, 217, 255));
+                  edition.setTextSize(15);
                   edition.setGravity(Gravity.CENTER);
-                  page.addView(edition);
+                  root.addView(edition);
 
                   clock = new TextView(this);
-                  clock.setTextColor(white);
-                  clock.setTextSize(42);
+                  clock.setTextColor(Color.WHITE);
+                  clock.setTextSize(30);
                   clock.setGravity(Gravity.CENTER);
-                  clock.setPadding(0,35,0,0);
-                  page.addView(clock);
+                  clock.setPadding(0, 30, 0, 10);
+                  root.addView(clock);
 
-                  TextView date = new TextView(this);
-                  date.setText(new SimpleDateFormat("EEEE, dd MMMM yyyy", Locale.getDefault()).format(new Date()));
-                  date.setTextColor(Color.LTGRAY);
-                  date.setTextSize(15);
-                  date.setGravity(Gravity.CENTER);
-                  page.addView(date);
-
-                  TextView car = new TextView(this);
-                  car.setText("\nSAIPA ATLAS G\n\nSPORT • DRIVE • ENJOY");
-                  car.setTextColor(white);
-                  car.setTextSize(23);
-                  car.setTypeface(null, Typeface.BOLD);
-                  car.setGravity(Gravity.CENTER);
-                  car.setPadding(0,28,0,28);
-                  page.addView(car);
+                  updateClock();
 
                   TextView speed = new TextView(this);
-                  speed.setText("GPS SPEED\n-- km/h");
-                  speed.setTextColor(cyan);
+                  speed.setText("SPEED  |  -- km/h");
+                  speed.setTextColor(Color.rgb(0, 217, 255));
                   speed.setTextSize(21);
                   speed.setGravity(Gravity.CENTER);
-                  speed.setPadding(0,10,0,24);
-                  page.addView(speed);
+                  speed.setPadding(0, 15, 0, 30);
+                  root.addView(speed);
 
-                  addButton("نقشه و مسیریابی", () -> open("geo:0,0?q=Yazd"));
-                  addButton("موزیک", () -> openMusic());
-                  addButton("تنظیمات", () -> openSettings());
+                  addButton(root, "NAVIGATION", v ->
+                      openApp("geo:0,0?q=Yazd"));
+
+                  addButton(root, "MUSIC PLAYER", v ->
+                      openMusic());
+
+                  addButton(root, "ANDROID SETTINGS", v -> {
+                      startActivity(new Intent(
+                          android.provider.Settings.ACTION_SETTINGS));
+                  });
 
                   TextView footer = new TextView(this);
-                  footer.setText("ATLAS G SPORT • VERSION 1.0");
+                  footer.setText("SAIPA ATLAS G");
                   footer.setTextColor(Color.GRAY);
-                  footer.setTextSize(10);
+                  footer.setTextSize(12);
                   footer.setGravity(Gravity.CENTER);
-                  footer.setPadding(0,22,0,0);
-                  page.addView(footer);
+                  footer.setPadding(0, 25, 0, 0);
+                  root.addView(footer);
 
-                  setContentView(page);
-                  updateClock();
+                  setContentView(root);
+              }
+
+              void addButton(LinearLayout root, String label,
+                             View.OnClickListener listener) {
+                  Button button = new Button(this);
+                  button.setText(label);
+                  button.setTextColor(Color.WHITE);
+                  button.setBackgroundTintList(
+                      android.content.res.ColorStateList.valueOf(
+                          Color.rgb(20, 35, 50)));
+                  button.setOnClickListener(listener);
+
+                  LinearLayout.LayoutParams params =
+                      new LinearLayout.LayoutParams(
+                          LinearLayout.LayoutParams.MATCH_PARENT, 58);
+                  params.setMargins(0, 8, 0, 8);
+                  root.addView(button, params);
               }
 
               void updateClock() {
-                  clock.setText(new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()));
-                  clock.postDelayed(() -> updateClock(), 30000);
+                  String time = new SimpleDateFormat(
+                      "HH:mm", Locale.getDefault()).format(new Date());
+                  String date = new SimpleDateFormat(
+                      "yyyy/MM/dd", Locale.getDefault()).format(new Date());
+                  clock.setText(time + "\n" + date);
               }
 
-              void addButton(String label, Runnable action) {
-                  Button b = new Button(this);
-                  b.setText(label);
-                  b.setTextColor(white);
-                  b.setTextSize(16);
-                  b.setAllCaps(false);
-                  b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(25,39,54)));
-                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1,62);
-                  p.setMargins(0,8,0,8);
-                  page.addView(b,p);
-                  b.setOnClickListener(v -> action.run());
-              }
-
-              void open(String uri) {
+              void openApp(String uri) {
                   try {
-                      startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(uri)));
-                  } catch(Exception e) {
-                      Toast.makeText(this,"برنامه نقشه نصب نیست",Toast.LENGTH_SHORT).show();
+                      Intent intent = new Intent(
+                          Intent.ACTION_VIEW, Uri.parse(uri));
+                      startActivity(intent);
+                  } catch (Exception e) {
+                      openSettings();
                   }
               }
 
               void openMusic() {
+                  Intent intent = new Intent(
+                      "android.intent.action.MUSIC_PLAYER");
                   try {
-                      Intent i = new Intent("android.intent.action.MAIN");
-                      i.addCategory("android.intent.category.APP_MUSIC");
-                      startActivity(i);
-                  } catch(Exception e) {
-                      Toast.makeText(this,"برنامه موسیقی پیدا نشد",Toast.LENGTH_SHORT).show();
+                      startActivity(intent);
+                  } catch (Exception e) {
+                      openSettings();
                   }
               }
 
               void openSettings() {
-                  try {
-                      startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS));
-                  } catch(Exception e) {
-                      Toast.makeText(this,"تنظیمات در دسترس نیست",Toast.LENGTH_SHORT).show();
-                  }
+                  startActivity(new Intent(
+                      android.provider.Settings.ACTION_SETTINGS));
               }
           }
           EOF
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Setup Android SDK
-  uses: android-actions/setup-android@v3
-  with:
-    packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
-    accept-android-sdk-licenses: true
-
-      - name: Install Android platform
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-
       - name: Build APK
-        run: gradle assembleDebug
+        run: gradle --no-daemon assembleDebug
 
-      - name: Save APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ATLAS-G-SPORT-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
