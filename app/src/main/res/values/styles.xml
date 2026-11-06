@@ -1,8 +1,14 @@
+
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.AtlasGSport" parent="Theme.AppCompat.NoActionBar">
+
+    <style name="Theme.AtlasGSport" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/luxury_black</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowNoTitle">true</item>
+        <item name="android:colorAccent">@color/luxury_gold</item>
+        <item name="android:navigationBarColor">@color/luxury_black</item>
+        <item name="android:statusBarColor">@color/luxury_black</item>
     </style>
+
 </resources>
