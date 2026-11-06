@@ -2,17 +2,16 @@
 name: Build ATLAS G SPORT APK
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout project
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -21,20 +20,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
-          accept-android-sdk-licenses: true
-          log-accepted-android-sdk-licenses: false
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Create Android project
-        shell: bash
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Create Android Project
         run: |
           mkdir -p app/src/main/java/com/makan/atlas
           mkdir -p app/src/main/res/values
@@ -76,7 +75,7 @@ jobs:
               defaultConfig {
                   applicationId 'com.makan.atlas'
                   minSdk 23
-                  targetSdk 29
+                  targetSdk 28
                   versionCode 1
                   versionName '1.0'
               }
@@ -88,17 +87,32 @@ jobs:
           }
           EOF
 
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:colorAccent">#E6D5B5</item>
+                  <item name="android:statusBarColor">#0B0A08</item>
+                  <item name="android:navigationBarColor">#0B0A08</item>
+                  <item name="android:windowBackground">#0B0A08</item>
+                  <item name="android:windowLightStatusBar">false</item>
+              </style>
+          </resources>
+          EOF
+
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
               <application
                   android:theme="@style/AppTheme"
                   android:label="ATLAS G SPORT"
-                  android:allowBackup="false"
-                  android:supportsRtl="true">
+                  android:usesCleartextTraffic="true">
 
                   <activity
                       android:name=".MainActivity"
+                      android:screenOrientation="landscape"
                       android:exported="true">
 
                       <intent-filter>
@@ -111,175 +125,290 @@ jobs:
                           <category android:name="android.intent.category.HOME"/>
                           <category android:name="android.intent.category.DEFAULT"/>
                       </intent-filter>
-
                   </activity>
               </application>
           </manifest>
           EOF
 
-          cat > app/src/main/res/values/styles.xml <<'EOF'
-          <resources>
-              <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
-                  <item name="android:fontFamily">sans</item>
-                  <item name="android:colorAccent">#00D9FF</item>
-                  <item name="android:statusBarColor">#080B12</item>
-                  <item name="android:navigationBarColor">#080B12</item>
-                  <item name="android:windowLightStatusBar">false</item>
-                  <item name="android:windowBackground">#080B12</item>
-              </style>
-          </resources>
-          EOF
-
           cat > app/src/main/java/com/makan/atlas/MainActivity.java <<'EOF'
           package com.makan.atlas;
 
-          import android.app.Activity;
-          import android.os.Bundle;
+          import android.app.*;
+          import android.os.*;
+          import android.Manifest;
+          import android.content.*;
+          import android.content.pm.PackageManager;
           import android.graphics.Color;
-          import android.view.Gravity;
-          import android.view.View;
-          import android.widget.Button;
-          import android.widget.LinearLayout;
-          import android.widget.TextView;
-          import android.content.Intent;
-          import android.net.Uri;
-          import android.text.format.DateFormat;
+          import android.graphics.Typeface;
+          import android.location.*;
+          import android.provider.Settings;
+          import android.view.*;
+          import android.widget.*;
           import java.text.SimpleDateFormat;
-          import java.util.Date;
-          import java.util.Locale;
+          import java.util.*;
 
           public class MainActivity extends Activity {
 
-              TextView clock;
+              final int BG = Color.rgb(11,10,8);
+              final int PANEL = Color.rgb(33,29,23);
+              final int CREAM = Color.rgb(230,213,181);
+              final int WHITE = Color.rgb(245,240,230);
+              final int MUTED = Color.rgb(160,150,133);
+
+              TextView clock, date, speed;
+              LocationManager locationManager;
+              Handler handler = new Handler();
+              boolean locationStarted = false;
 
               @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-
+              public void onCreate(Bundle b) {
+                  super.onCreate(b);
                   getWindow().getDecorView().setSystemUiVisibility(
                       View.SYSTEM_UI_FLAG_FULLSCREEN |
                       View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
                       View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                   );
-
-                  LinearLayout root = new LinearLayout(this);
-                  root.setOrientation(LinearLayout.VERTICAL);
-                  root.setGravity(Gravity.CENTER);
-                  root.setPadding(24, 24, 24, 24);
-                  root.setBackgroundColor(Color.rgb(8, 11, 18));
-
-                  TextView title = new TextView(this);
-                  title.setText("ATLAS G");
-                  title.setTextColor(Color.WHITE);
-                  title.setTextSize(38);
-                  title.setGravity(Gravity.CENTER);
-                  title.setTypeface(null, 1);
-                  root.addView(title);
-
-                  TextView edition = new TextView(this);
-                  edition.setText("SPORT  |  MAKAN EDITION");
-                  edition.setTextColor(Color.rgb(0, 217, 255));
-                  edition.setTextSize(15);
-                  edition.setGravity(Gravity.CENTER);
-                  root.addView(edition);
-
-                  clock = new TextView(this);
-                  clock.setTextColor(Color.WHITE);
-                  clock.setTextSize(30);
-                  clock.setGravity(Gravity.CENTER);
-                  clock.setPadding(0, 30, 0, 10);
-                  root.addView(clock);
-
+                  setRequestedOrientation(0);
+                  buildScreen();
                   updateClock();
-
-                  TextView speed = new TextView(this);
-                  speed.setText("SPEED  |  -- km/h");
-                  speed.setTextColor(Color.rgb(0, 217, 255));
-                  speed.setTextSize(21);
-                  speed.setGravity(Gravity.CENTER);
-                  speed.setPadding(0, 15, 0, 30);
-                  root.addView(speed);
-
-                  addButton(root, "NAVIGATION", v ->
-                      openApp("geo:0,0?q=Yazd"));
-
-                  addButton(root, "MUSIC PLAYER", v ->
-                      openMusic());
-
-                  addButton(root, "ANDROID SETTINGS", v -> {
-                      startActivity(new Intent(
-                          android.provider.Settings.ACTION_SETTINGS));
-                  });
-
-                  TextView footer = new TextView(this);
-                  footer.setText("SAIPA ATLAS G");
-                  footer.setTextColor(Color.GRAY);
-                  footer.setTextSize(12);
-                  footer.setGravity(Gravity.CENTER);
-                  footer.setPadding(0, 25, 0, 0);
-                  root.addView(footer);
-
-                  setContentView(root);
+                  requestLocation();
               }
 
-              void addButton(LinearLayout root, String label,
-                             View.OnClickListener listener) {
-                  Button button = new Button(this);
-                  button.setText(label);
-                  button.setTextColor(Color.WHITE);
-                  button.setBackgroundTintList(
-                      android.content.res.ColorStateList.valueOf(
-                          Color.rgb(20, 35, 50)));
-                  button.setOnClickListener(listener);
+              TextView text(String value, int size, int color) {
+                  TextView t = new TextView(this);
+                  t.setText(value);
+                  t.setTextSize(size);
+                  t.setTextColor(color);
+                  t.setGravity(Gravity.CENTER);
+                  t.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+                  return t;
+              }
 
-                  LinearLayout.LayoutParams params =
-                      new LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT, 58);
-                  params.setMargins(0, 8, 0, 8);
-                  root.addView(button, params);
+              GradientDrawable shape(int color, int radius) {
+                  GradientDrawable d = new GradientDrawable();
+                  d.setColor(color);
+                  d.setCornerRadius(radius);
+                  d.setStroke(1, Color.rgb(75,65,50));
+                  return d;
+              }
+
+              LinearLayout column() {
+                  LinearLayout l = new LinearLayout(this);
+                  l.setOrientation(LinearLayout.VERTICAL);
+                  return l;
+              }
+
+              LinearLayout row() {
+                  LinearLayout l = new LinearLayout(this);
+                  l.setOrientation(LinearLayout.HORIZONTAL);
+                  l.setGravity(Gravity.CENTER_VERTICAL);
+                  return l;
+              }
+
+              void add(LinearLayout parent, View child, int width, int height, float weight) {
+                  parent.addView(child, new LinearLayout.LayoutParams(width, height, weight));
+              }
+
+              TextView button(String label, Runnable action) {
+                  TextView b = text(label, 14, CREAM);
+                  b.setBackground(shape(PANEL, 22));
+                  b.setPadding(12,10,12,10);
+                  b.setOnClickListener(v -> action.run());
+                  return b;
+              }
+
+              void buildScreen() {
+                  LinearLayout root = column();
+                  root.setBackgroundColor(BG);
+                  root.setPadding(18,8,18,10);
+                  setContentView(root);
+
+                  // نوار بالایی
+                  LinearLayout top = row();
+                  TextView brand = text("ATLAS G  |  SPORT", 17, CREAM);
+                  brand.setGravity(Gravity.CENTER_VERTICAL);
+                  add(top, brand, 0, 45, 1);
+
+                  TextView network = text("◉  Wi-Fi     ◉  GPS     ◉  BT", 12, MUTED);
+                  add(top, network, -2, 45, 0);
+                  clock = text("--:--", 23, WHITE);
+                  add(top, clock, 90, 45, 0);
+                  add(root, top, -1, 45, 0);
+
+                  View line = new View(this);
+                  line.setBackgroundColor(Color.rgb(75,65,50));
+                  add(root, line, -1, 1, 0);
+
+                  // محتوای اصلی
+                  LinearLayout middle = row();
+                  middle.setPadding(0,10,0,10);
+
+                  // پنل آب و هوا
+                  LinearLayout weather = column();
+                  weather.setGravity(Gravity.CENTER);
+                  weather.setPadding(8,12,8,12);
+                  weather.setBackground(shape(PANEL,20));
+                  add(weather, text("WEATHER",12,MUTED),-1,30,0);
+                  add(weather, text("☀",38,CREAM),-1,60,0);
+                  add(weather, text("--°",27,WHITE),-1,45,0);
+                  add(weather, text("آب‌وهوا",13,MUTED),-1,30,0);
+                  add(middle, weather, 110,-1,0);
+
+                  // قسمت مرکزی خودرو
+                  LinearLayout car = column();
+                  car.setGravity(Gravity.CENTER);
+                  car.setBackground(shape(Color.rgb(18,16,13),22));
+                  car.setPadding(10,8,10,8);
+
+                  add(car, text("SAIPA  ATLAS G",16,CREAM),-1,35,0);
+
+                  TextView vehicle = text("🚘",86,CREAM);
+                  add(car, vehicle,-1,0,1);
+
+                  add(car, text("ATLAS G SPORT EDITION",12,MUTED),-1,25,0);
+                  add(middle, car, 0,-1,1);
+
+                  // پنل فشار باد
+                  LinearLayout tpms = column();
+                  tpms.setGravity(Gravity.CENTER);
+                  tpms.setPadding(8,10,8,10);
+                  tpms.setBackground(shape(PANEL,20));
+
+                  add(tpms,text("TPMS",15,CREAM),-1,32,0);
+                  add(tpms,text("◉",32,CREAM),-1,48,0);
+                  add(tpms,text("فشار باد",12,MUTED),-1,25,0);
+                  add(tpms,text("جلو چپ  --",12,WHITE),-1,28,0);
+                  add(tpms,text("جلو راست --",12,WHITE),-1,28,0);
+                  add(tpms,text("عقب چپ  --",12,WHITE),-1,28,0);
+                  add(tpms,text("عقب راست --",12,WHITE),-1,28,0);
+                  add(tpms,text("DEMO DATA",9,MUTED),-1,22,0);
+                  add(middle,tpms,125,-1,0);
+
+                  add(root,middle, -1,0,1);
+
+                  // نوار پایین
+                  LinearLayout bottom = row();
+                  bottom.setGravity(Gravity.CENTER);
+                  bottom.setPadding(0,8,0,0);
+
+                  speed = text("0 km/h",19,CREAM);
+                  add(bottom,speed,110,55,0);
+
+                  add(bottom,button("نقشه",() -> openMaps()),0,52,1);
+                  add(bottom,button("موسیقی",() -> openCategory(Intent.CATEGORY_APP_MUSIC)),0,52,1);
+                  add(bottom,button("برنامه‌ها",() -> openApps()),0,52,1);
+                  add(bottom,button("تنظیمات",() -> openSettings()),0,52,1);
+                  add(bottom,button("درباره ما",() -> about()),0,52,1);
+
+                  add(root,bottom,-1,60,0);
+
+                  date = text("ATLAS G SPORT  •  DRIVE IN STYLE",10,MUTED);
+                  add(root,date,-1,20,0);
               }
 
               void updateClock() {
-                  String time = new SimpleDateFormat(
-                      "HH:mm", Locale.getDefault()).format(new Date());
-                  String date = new SimpleDateFormat(
-                      "yyyy/MM/dd", Locale.getDefault()).format(new Date());
-                  clock.setText(time + "\n" + date);
+                  String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+                  if(clock != null) clock.setText(time);
+                  handler.postDelayed(this::updateClock,1000);
               }
 
-              void openApp(String uri) {
+              void requestLocation() {
+                  if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                      != PackageManager.PERMISSION_GRANTED) {
+                      requestPermissions(new String[]{
+                          Manifest.permission.ACCESS_FINE_LOCATION,
+                          Manifest.permission.ACCESS_COARSE_LOCATION
+                      },100);
+                      return;
+                  }
+                  startGPS();
+              }
+
+              void startGPS() {
                   try {
-                      Intent intent = new Intent(
-                          Intent.ACTION_VIEW, Uri.parse(uri));
-                      startActivity(intent);
-                  } catch (Exception e) {
-                      openSettings();
+                      locationManager = (LocationManager)getSystemService(LOCATION_SERVICE);
+                      locationManager.requestLocationUpdates(
+                          LocationManager.GPS_PROVIDER,1000,1,
+                          new LocationListener() {
+                              public void onLocationChanged(Location l) {
+                                  if(speed != null) {
+                                      speed.setText(Math.round(l.getSpeed()*3.6f)+" km/h");
+                                  }
+                              }
+                              public void onProviderEnabled(String p) {}
+                              public void onProviderDisabled(String p) {}
+                              public void onStatusChanged(String p,int s,Bundle b) {}
+                          }
+                      );
+                      locationStarted = true;
+                  } catch(Exception e) {
+                      if(speed != null) speed.setText("-- km/h");
                   }
               }
 
-              void openMusic() {
-                  Intent intent = new Intent(
-                      "android.intent.action.MUSIC_PLAYER");
-                  try {
-                      startActivity(intent);
-                  } catch (Exception e) {
-                      openSettings();
+              @Override
+              public void onRequestPermissionsResult(int r,String[] p,int[] g) {
+                  super.onRequestPermissionsResult(r,p,g);
+                  if(r==100 && g.length>0 && g[0]==PackageManager.PERMISSION_GRANTED) {
+                      startGPS();
                   }
+              }
+
+              void openMaps() {
+                  try {
+                      Intent i = new Intent(Intent.ACTION_VIEW,
+                          android.net.Uri.parse("geo:0,0?q="));
+                      startActivity(i);
+                  } catch(Exception e) {
+                      openCategory(Intent.CATEGORY_APP_MAPS);
+                  }
+              }
+
+              void openCategory(String category) {
+                  Intent i = new Intent(Intent.ACTION_MAIN);
+                  i.addCategory(category);
+                  try { startActivity(i); }
+                  catch(Exception e) {
+                      Toast.makeText(this,"برنامه مورد نظر نصب نیست",Toast.LENGTH_SHORT).show();
+                  }
+              }
+
+              void openApps() {
+                  try {
+                      Intent i = new Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS);
+                      startActivity(i);
+                  } catch(Exception e) { openSettings(); }
               }
 
               void openSettings() {
-                  startActivity(new Intent(
-                      android.provider.Settings.ACTION_SETTINGS));
+                  startActivity(new Intent(Settings.ACTION_SETTINGS));
+              }
+
+              void about() {
+                  new AlertDialog.Builder(this)
+                      .setTitle("ATLAS G SPORT")
+                      .setMessage("نسخه 1.0\n\nتیم طراحی مهندس زارع")
+                      .setPositiveButton("باشه",null)
+                      .show();
+              }
+
+              @Override
+              protected void onDestroy() {
+                  super.onDestroy();
+                  handler.removeCallbacksAndMessages(null);
+                  if(locationManager != null && locationStarted) {
+                      try { locationManager.removeUpdates((LocationListener)null); }
+                      catch(Exception ignored) {}
+                  }
               }
           }
           EOF
 
       - name: Build APK
-        run: gradle --no-daemon assembleDebug
+        run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ATLAS-G-SPORT-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
