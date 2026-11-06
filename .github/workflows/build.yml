@@ -1,239 +1,372 @@
-package com.makan.atlas;
+name: Build ATLAS G SPORT APK
 
-import android.app.Activity;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
-import android.view.Gravity;
-import android.view.View;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.content.Intent;
-import android.net.Uri;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-public class MainActivity extends Activity {
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    private TextView clockText;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private Runnable clockRunnable;
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-        // Immersive Fullscreen Mode
-        getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_FULLSCREEN |
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        );
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
 
-        // Root Layout (Dark Carbon Luxury Background)
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(20, 16, 20, 16);
-        root.setBackgroundColor(Color.rgb(5, 7, 12));
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
-        // --- 1. TOP STATUS / HEADER BAR ---
-        LinearLayout topBar = new LinearLayout(this);
-        topBar.setOrientation(LinearLayout.HORIZONTAL);
-        topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(16, 8, 16, 8);
+      - name: Create Android project
+        shell: bash
+        run: |
+          mkdir -p app/src/main/java/com/makan/atlas
+          mkdir -p app/src/main/res/values
 
-        GradientDrawable topBg = new GradientDrawable();
-        topBg.setColor(Color.rgb(12, 16, 25));
-        topBg.setCornerRadius(16);
-        topBg.setStroke(1, Color.rgb(180, 140, 70)); // Gold border
-        topBar.setBackground(topBg);
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "ATLAS-G-SPORT"
+          include ':app'
+          EOF
 
-        LinearLayout.LayoutParams topParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 55);
-        topParams.setMargins(0, 0, 0, 14);
-        topBar.setLayoutParams(topParams);
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
 
-        TextView brandTitle = new TextView(this);
-        brandTitle.setText("🏠   ATLAS G  SPORT");
-        brandTitle.setTextColor(Color.rgb(220, 180, 90));
-        brandTitle.setTextSize(15);
-        brandTitle.setTypeface(null, android.graphics.Typeface.BOLD);
-        topBar.addView(brandTitle, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
 
-        TextView statusIcons = new TextView(this);
-        statusIcons.setText("📍 GPS   📶 Wi-Fi   ✖ BT   |   ");
-        statusIcons.setTextColor(Color.rgb(160, 175, 200));
-        statusIcons.setTextSize(12);
-        topBar.addView(statusIcons);
+          android {
+              namespace 'com.makan.atlas'
+              compileSdk 35
 
-        clockText = new TextView(this);
-        clockText.setTextColor(Color.WHITE);
-        clockText.setTextSize(15);
-        clockText.setTypeface(null, android.graphics.Typeface.BOLD);
-        topBar.addView(clockText);
+              defaultConfig {
+                  applicationId 'com.makan.atlas'
+                  minSdk 23
+                  targetSdk 29
+                  versionCode 1
+                  versionName '1.0'
+              }
 
-        root.addView(topBar);
-        startClockTicker();
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          EOF
 
-        // --- 2. MIDDLE DASHBOARD (3 COLUMNS: WEATHER | CAR | TPMS) ---
-        LinearLayout middleContainer = new LinearLayout(this);
-        middleContainer.setOrientation(LinearLayout.HORIZONTAL);
-        
-        LinearLayout.LayoutParams middleParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
-        middleParams.setMargins(0, 0, 0, 14);
-        middleContainer.setLayoutParams(middleParams);
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-        // Left Card: Weather (Yazd)
-        LinearLayout weatherCard = createCard(Color.rgb(10, 14, 22), Color.rgb(150, 120, 60));
-        LinearLayout.LayoutParams leftParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.2f);
-        leftParams.setMargins(0, 0, 10, 0);
-        weatherCard.setLayoutParams(leftParams);
-        
-        addText(weatherCard, "☀️  18°C", 26, Color.WHITE, true);
-        addText(weatherCard, "📍 یزد - نیمه ابری", 13, Color.rgb(200, 210, 230), false);
-        addText(weatherCard, "H: 24°  L: 12°", 11, Color.GRAY, false);
+              <application
+                  android:theme="@style/AppTheme"
+                  android:label="ATLAS G SPORT"
+                  android:allowBackup="false"
+                  android:supportsRtl="true">
 
-        middleContainer.addView(weatherCard);
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
 
-        // Center Card: Car Showcase
-        LinearLayout carCard = createCard(Color.rgb(10, 14, 22), Color.rgb(200, 160, 80));
-        LinearLayout.LayoutParams centerParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 2.6f);
-        centerParams.setMargins(0, 0, 10, 0);
-        carCard.setLayoutParams(centerParams);
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
 
-        addText(carCard, "SAIPA", 12, Color.rgb(200, 160, 80), true);
-        addText(carCard, "ATLAS G SPORT", 22, Color.WHITE, true);
-        addText(carCard, "🚗 [ نمای گرافیکی خودرو ]", 15, Color.rgb(0, 217, 255), false);
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.HOME"/>
+                          <category android:name="android.intent.category.DEFAULT"/>
+                      </intent-filter>
 
-        middleContainer.addView(carCard);
+                  </activity>
+              </application>
+          </manifest>
+          EOF
 
-        // Right Card: Tire Pressure (TPMS)
-        LinearLayout tpmsCard = createCard(Color.rgb(10, 14, 22), Color.rgb(150, 120, 60));
-        LinearLayout.LayoutParams rightParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.2f);
-        tpmsCard.setLayoutParams(rightParams);
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:colorAccent">#00D9FF</item>
+                  <item name="android:statusBarColor">#05070C</item>
+                  <item name="android:navigationBarColor">#05070C</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowBackground">#05070C</item>
+              </style>
+          </resources>
+          EOF
 
-        addText(tpmsCard, "⚠️ فشار باد تایرها", 13, Color.rgb(220, 180, 90), true);
-        addText(tpmsCard, " جلو: 2.3 Bar \n عقب: 2.4 Bar", 13, Color.WHITE, false);
-        addText(tpmsCard, "✔ وضعیت: طبیعی", 12, Color.rgb(0, 230, 118), false);
+          cat > app/src/main/java/com/makan/atlas/MainActivity.java <<'EOF'
+          package com.makan.atlas;
 
-        middleContainer.addView(tpmsCard);
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.graphics.Color;
+          import android.graphics.drawable.GradientDrawable;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.widget.Button;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
+          import android.content.Intent;
+          import android.net.Uri;
+          import java.text.SimpleDateFormat;
+          import java.util.Date;
+          import java.util.Locale;
 
-        root.addView(middleContainer);
+          public class MainActivity extends Activity {
 
-        // --- 3. BOTTOM DOCK (SPEED & FUNCTION BUTTONS) ---
-        LinearLayout bottomDock = new LinearLayout(this);
-        bottomDock.setOrientation(LinearLayout.HORIZONTAL);
-        
-        LinearLayout.LayoutParams dockParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 75);
-        bottomDock.setLayoutParams(dockParams);
+              private TextView clockText;
+              private final Handler handler = new Handler(Looper.getMainLooper());
+              private Runnable clockRunnable;
 
-        // Speedometer Widget
-        LinearLayout speedWidget = createCard(Color.rgb(14, 20, 32), Color.rgb(150, 120, 60));
-        LinearLayout.LayoutParams speedParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.2f);
-        speedParams.setMargins(0, 0, 8, 0);
-        speedWidget.setLayoutParams(speedParams);
-        addText(speedWidget, "🛞 0 km/h", 16, Color.rgb(0, 217, 255), true);
-        bottomDock.addView(speedWidget);
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
 
-        // Action Buttons
-        addButton(bottomDock, "🗺 نقشه", v -> openApp("geo:0,0?q=Yazd"));
-        addButton(bottomDock, "🎵 موسیقی", v -> openMusic());
-        addButton(bottomDock, "📱 برنامه‌ها", v -> openSettings());
-        addButton(bottomDock, "⚙ تنظیمات", v -> openSettings());
-        addButton(bottomDock, "ℹ درباره ما", v -> openSettings());
+                  getWindow().getDecorView().setSystemUiVisibility(
+                      View.SYSTEM_UI_FLAG_FULLSCREEN |
+                      View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                      View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                  );
 
-        root.addView(bottomDock);
+                  LinearLayout root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setPadding(20, 16, 20, 16);
+                  root.setBackgroundColor(Color.rgb(5, 7, 12));
 
-        setContentView(root);
-    }
+                  LinearLayout topBar = new LinearLayout(this);
+                  topBar.setOrientation(LinearLayout.HORIZONTAL);
+                  topBar.setGravity(Gravity.CENTER_VERTICAL);
+                  topBar.setPadding(16, 8, 16, 8);
 
-    private LinearLayout createCard(int bgColor, int borderColor) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setGravity(Gravity.CENTER);
-        card.setPadding(12, 12, 12, 12);
+                  GradientDrawable topBg = new GradientDrawable();
+                  topBg.setColor(Color.rgb(12, 16, 25));
+                  topBg.setCornerRadius(16);
+                  topBg.setStroke(1, Color.rgb(180, 140, 70));
+                  topBar.setBackground(topBg);
 
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(bgColor);
-        bg.setCornerRadius(16);
-        bg.setStroke(1, borderColor);
-        card.setBackground(bg);
-        return card;
-    }
+                  LinearLayout.LayoutParams topParams = new LinearLayout.LayoutParams(
+                      LinearLayout.LayoutParams.MATCH_PARENT, 55);
+                  topParams.setMargins(0, 0, 0, 14);
+                  topBar.setLayoutParams(topParams);
 
-    private void addText(LinearLayout parent, String text, int size, int color, boolean bold) {
-        TextView tv = new TextView(this);
-        tv.setText(text);
-        tv.setTextColor(color);
-        tv.setTextSize(size);
-        tv.setGravity(Gravity.CENTER);
-        if (bold) tv.setTypeface(null, android.graphics.Typeface.BOLD);
-        parent.addView(tv);
-    }
+                  TextView brandTitle = new TextView(this);
+                  brandTitle.setText("ATLAS G SPORT");
+                  brandTitle.setTextColor(Color.rgb(220, 180, 90));
+                  brandTitle.setTextSize(15);
+                  brandTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+                  topBar.addView(brandTitle, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-    private void addButton(LinearLayout root, String label, View.OnClickListener listener) {
-        Button btn = new Button(this);
-        btn.setText(label);
-        btn.setTextColor(Color.WHITE);
-        btn.setTextSize(13);
-        btn.setOnClickListener(listener);
+                  TextView statusIcons = new TextView(this);
+                  statusIcons.setText("GPS | Wi-Fi | BT | ");
+                  statusIcons.setTextColor(Color.rgb(160, 175, 200));
+                  statusIcons.setTextSize(12);
+                  topBar.addView(statusIcons);
 
-        GradientDrawable btnBg = new GradientDrawable();
-        btnBg.setColor(Color.rgb(14, 20, 32));
-        btnBg.setCornerRadius(16);
-        btnBg.setStroke(1, Color.rgb(150, 120, 60));
-        btn.setBackground(btnBg);
+                  clockText = new TextView(this);
+                  clockText.setTextColor(Color.WHITE);
+                  clockText.setTextSize(15);
+                  clockText.setTypeface(null, android.graphics.Typeface.BOLD);
+                  topBar.addView(clockText);
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
-        params.setMargins(4, 0, 4, 0);
-        btn.setLayoutParams(params);
+                  root.addView(topBar);
+                  startClockTicker();
 
-        root.addView(btn);
-    }
+                  LinearLayout middleContainer = new LinearLayout(this);
+                  middleContainer.setOrientation(LinearLayout.HORIZONTAL);
+                  
+                  LinearLayout.LayoutParams middleParams = new LinearLayout.LayoutParams(
+                      LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
+                  middleParams.setMargins(0, 0, 0, 14);
+                  middleContainer.setLayoutParams(middleParams);
 
-    private void startClockTicker() {
-        clockRunnable = new Runnable() {
-            @Override
-            public void run() {
-                String timeStr = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
-                clockText.setText(timeStr);
-                handler.postDelayed(this, 1000);
-            }
-        };
-        handler.post(clockRunnable);
-    }
+                  LinearLayout weatherCard = createCard(Color.rgb(10, 14, 22), Color.rgb(150, 120, 60));
+                  LinearLayout.LayoutParams leftParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.2f);
+                  leftParams.setMargins(0, 0, 10, 0);
+                  weatherCard.setLayoutParams(leftParams);
+                  
+                  addText(weatherCard, "18 C", 26, Color.WHITE, true);
+                  addText(weatherCard, "Yazd - Cloudy", 13, Color.rgb(200, 210, 230), false);
+                  addText(weatherCard, "H: 24  L: 12", 11, Color.GRAY, false);
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (handler != null && clockRunnable != null) {
-            handler.removeCallbacks(clockRunnable);
-        }
-    }
+                  middleContainer.addView(weatherCard);
 
-    void openApp(String uri) {
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(uri)));
-        } catch (Exception e) {
-            openSettings();
-        }
-    }
+                  LinearLayout carCard = createCard(Color.rgb(10, 14, 22), Color.rgb(200, 160, 80));
+                  LinearLayout.LayoutParams centerParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 2.6f);
+                  centerParams.setMargins(0, 0, 10, 0);
+                  carCard.setLayoutParams(centerParams);
 
-    void openMusic() {
-        try {
-            startActivity(new Intent("android.intent.action.MUSIC_PLAYER"));
-        } catch (Exception e) {
-            openSettings();
-        }
-    }
+                  addText(carCard, "SAIPA", 12, Color.rgb(200, 160, 80), true);
+                  addText(carCard, "ATLAS G SPORT", 22, Color.WHITE, true);
+                  addText(carCard, "[ Sport Dashboard ]", 15, Color.rgb(0, 217, 255), false);
 
-    void openSettings() {
-        startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS));
-    }
-}
+                  middleContainer.addView(carCard);
+
+                  LinearLayout tpmsCard = createCard(Color.rgb(10, 14, 22), Color.rgb(150, 120, 60));
+                  LinearLayout.LayoutParams rightParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.2f);
+                  tpmsCard.setLayoutParams(rightParams);
+
+                  addText(tpmsCard, "Tire Pressure", 13, Color.rgb(220, 180, 90), true);
+                  addText(tpmsCard, "Front: 2.3 Bar\nRear: 2.4 Bar", 13, Color.WHITE, false);
+                  addText(tpmsCard, "Status: Normal", 12, Color.rgb(0, 230, 118), false);
+
+                  middleContainer.addView(tpmsCard);
+
+                  root.addView(middleContainer);
+
+                  LinearLayout bottomDock = new LinearLayout(this);
+                  bottomDock.setOrientation(LinearLayout.HORIZONTAL);
+                  
+                  LinearLayout.LayoutParams dockParams = new LinearLayout.LayoutParams(
+                      LinearLayout.LayoutParams.MATCH_PARENT, 75);
+                  bottomDock.setLayoutParams(dockParams);
+
+                  LinearLayout speedWidget = createCard(Color.rgb(14, 20, 32), Color.rgb(150, 120, 60));
+                  LinearLayout.LayoutParams speedParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.2f);
+                  speedParams.setMargins(0, 0, 8, 0);
+                  speedWidget.setLayoutParams(speedParams);
+                  addText(speedWidget, "0 km/h", 16, Color.rgb(0, 217, 255), true);
+                  bottomDock.addView(speedWidget);
+
+                  addButton(bottomDock, "Map", v -> openApp("geo:0,0?q=Yazd"));
+                  addButton(bottomDock, "Music", v -> openMusic());
+                  addButton(bottomDock, "Apps", v -> openSettings());
+                  addButton(bottomDock, "Settings", v -> openSettings());
+                  addButton(bottomDock, "About", v -> openSettings());
+
+                  root.addView(bottomDock);
+
+                  setContentView(root);
+              }
+
+              private LinearLayout createCard(int bgColor, int borderColor) {
+                  LinearLayout card = new LinearLayout(this);
+                  card.setOrientation(LinearLayout.VERTICAL);
+                  card.setGravity(Gravity.CENTER);
+                  card.setPadding(12, 12, 12, 12);
+
+                  GradientDrawable bg = new GradientDrawable();
+                  bg.setColor(bgColor);
+                  bg.setCornerRadius(16);
+                  bg.setStroke(1, borderColor);
+                  card.setBackground(bg);
+                  return card;
+              }
+
+              private void addText(LinearLayout parent, String text, int size, int color, boolean bold) {
+                  TextView tv = new TextView(this);
+                  tv.setText(text);
+                  tv.setTextColor(color);
+                  tv.setTextSize(size);
+                  tv.setGravity(Gravity.CENTER);
+                  if (bold) tv.setTypeface(null, android.graphics.Typeface.BOLD);
+                  parent.addView(tv);
+              }
+
+              private void addButton(LinearLayout root, String label, View.OnClickListener listener) {
+                  Button btn = new Button(this);
+                  btn.setText(label);
+                  btn.setTextColor(Color.WHITE);
+                  btn.setTextSize(13);
+                  btn.setOnClickListener(listener);
+
+                  GradientDrawable btnBg = new GradientDrawable();
+                  btnBg.setColor(Color.rgb(14, 20, 32));
+                  btnBg.setCornerRadius(16);
+                  btnBg.setStroke(1, Color.rgb(150, 120, 60));
+                  btn.setBackground(btnBg);
+
+                  LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
+                  params.setMargins(4, 0, 4, 0);
+                  btn.setLayoutParams(params);
+
+                  root.addView(btn);
+              }
+
+              private void startClockTicker() {
+                  clockRunnable = new Runnable() {
+                      @Override
+                      public void run() {
+                          String timeStr = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+                          clockText.setText(timeStr);
+                          handler.postDelayed(this, 1000);
+                      }
+                  };
+                  handler.post(clockRunnable);
+              }
+
+              @Override
+              protected void onDestroy() {
+                  super.onDestroy();
+                  if (handler != null && clockRunnable != null) {
+                      handler.removeCallbacks(clockRunnable);
+                  }
+              }
+
+              void openApp(String uri) {
+                  try {
+                      startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(uri)));
+                  } catch (Exception e) {
+                      openSettings();
+                  }
+              }
+
+              void openMusic() {
+                  try {
+                      startActivity(new Intent("android.intent.action.MUSIC_PLAYER"));
+                  } catch (Exception e) {
+                      openSettings();
+                  }
+              }
+
+              void openSettings() {
+                  startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS));
+              }
+          }
+          EOF
+
+      - name: Build APK
+        run: gradle --no-daemon assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ATLAS-G-SPORT-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
