@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="luxury_black">#080808</color>
+    <color name="luxury_card_bg">#141414</color>
+    <color name="luxury_card_stroke">#262626</color>
+    <color name="luxury_gold">#D4AF37</color>
+    <color name="luxury_gold_dark">#997D21</color>
+    <color name="luxury_cream">#F5F5DC</color>
+    <color name="luxury_gray">#888888</color>
+    <color name="luxury_white">#FFFFFF</color>
+    <color name="ambient_glow">#33D4AF37</color>
+</resources>
