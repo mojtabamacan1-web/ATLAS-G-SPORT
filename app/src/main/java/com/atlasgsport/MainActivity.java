@@ -2,24 +2,17 @@
 package com.atlasg.sport;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
-import android.provider.Settings;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -27,8 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity
-        implements LocationListener {
+public class MainActivity extends AppCompatActivity {
 
     private TextView tvClock, tvDate, tvSpeed;
     private TextView tvGpsStatus, tvSongName;
@@ -36,40 +28,35 @@ public class MainActivity extends AppCompatActivity
     private Button btnPlay, btnPrev, btnNext;
     private Button btnMap, btnSettings;
 
-    private final Handler handler =
-            new Handler(Looper.getMainLooper());
-
-    private Runnable clockRunnable;
+    private final Handler handler = new Handler();
     private LocationManager locationManager;
 
     private boolean isPlaying = false;
 
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+    private final Runnable clockRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateClock();
+            handler.postDelayed(this, 1000);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        getWindow().setFlags(
-                WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN
-        );
-
-        getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-        );
-
         setContentView(R.layout.activity_main);
 
-        initViews();
-        setupClock();
-        setupListeners();
-        setupLocation();
+        getWindow().getDecorView().setSystemUiVisibility(
+                5894
+        );
+
+        initializeViews();
+        updateClock();
+        setupButtons();
+        setupGPS();
     }
 
-    private void initViews() {
+    private void initializeViews() {
         tvClock = findViewById(R.id.tvClock);
         tvDate = findViewById(R.id.tvDate);
         tvSpeed = findViewById(R.id.tvSpeed);
@@ -83,117 +70,60 @@ public class MainActivity extends AppCompatActivity
         btnSettings = findViewById(R.id.btnSettings);
     }
 
-    private void setupClock() {
+    private void updateClock() {
+        if (tvClock == null || tvDate == null) return;
+
+        Date now = new Date();
+
         SimpleDateFormat timeFormat =
                 new SimpleDateFormat("HH:mm", Locale.getDefault());
 
         SimpleDateFormat dateFormat =
-                new SimpleDateFormat(
-                        "EEEE، d MMMM",
-                        new Locale("fa", "IR")
-                );
+                new SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault());
 
-        clockRunnable = new Runnable() {
-            @Override
-            public void run() {
-                long currentTime = System.currentTimeMillis();
-
-                tvClock.setText(
-                        timeFormat.format(new Date(currentTime))
-                );
-
-                tvDate.setText(
-                        dateFormat.format(new Date(currentTime))
-                );
-
-                handler.postDelayed(this, 1000);
-            }
-        };
-
-        handler.post(clockRunnable);
+        tvClock.setText(timeFormat.format(now));
+        tvDate.setText(dateFormat.format(now));
     }
 
-    private void setupListeners() {
+    private void setupButtons() {
 
         btnPlay.setOnClickListener(v -> {
             isPlaying = !isPlaying;
 
-            if (isPlaying) {
-                btnPlay.setText("⏸");
-                tvSongName.setText("در حال پخش (Demo)");
+            btnPlay.setText(isPlaying ? "Ⅱ" : "▶");
 
-                Toast.makeText(
-                        this,
-                        "پخش موزیک",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-            } else {
-                btnPlay.setText("▶");
-                tvSongName.setText("آماده پخش");
-
-                Toast.makeText(
-                        this,
-                        "توقف موزیک",
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
+            tvSongName.setText(
+                    isPlaying ? "Demo playback" : "Playback paused"
+            );
         });
 
         btnPrev.setOnClickListener(v ->
-                Toast.makeText(
-                        this,
-                        "موزیک قبلی",
-                        Toast.LENGTH_SHORT
-                ).show()
+                tvSongName.setText("Previous track")
         );
 
         btnNext.setOnClickListener(v ->
-                Toast.makeText(
-                        this,
-                        "موزیک بعدی",
-                        Toast.LENGTH_SHORT
-                ).show()
+                tvSongName.setText("Next track")
         );
 
         btnMap.setOnClickListener(v -> {
-            try {
-                Intent intent = new Intent(
-                        Intent.ACTION_VIEW,
-                        android.net.Uri.parse("geo:0,0?q=")
-                );
+            Intent intent = new Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("geo:0,0?q=Iran")
+            );
 
-                startActivity(intent);
-
-            } catch (Exception e) {
-                Toast.makeText(
-                        this,
-                        "برنامه نقشه یافت نشد",
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
+            startActivity(intent);
         });
 
         btnSettings.setOnClickListener(v -> {
-            try {
-                startActivity(
-                        new Intent(Settings.ACTION_SETTINGS)
-                );
-
-            } catch (Exception e) {
-                Toast.makeText(
-                        this,
-                        "خطا در باز کردن تنظیمات",
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
+            startActivity(new Intent(
+                    android.provider.Settings.ACTION_SETTINGS
+            ));
         });
     }
 
-    private void setupLocation() {
-
-        locationManager = (LocationManager)
-                getSystemService(Context.LOCATION_SERVICE);
+    private void setupGPS() {
+        locationManager =
+                (LocationManager) getSystemService(LOCATION_SERVICE);
 
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -206,84 +136,47 @@ public class MainActivity extends AppCompatActivity
                             Manifest.permission.ACCESS_FINE_LOCATION,
                             Manifest.permission.ACCESS_COARSE_LOCATION
                     },
-                    LOCATION_PERMISSION_REQUEST_CODE
+                    100
             );
 
-        } else {
-            startLocationUpdates();
+            tvGpsStatus.setText("GPS • PERMISSION");
+            return;
         }
+
+        startGPSUpdates();
     }
 
-    private void startLocationUpdates() {
-
+    private void startGPSUpdates() {
         try {
-            if (locationManager == null) {
-                tvGpsStatus.setText("GPS: در دسترس نیست");
-                return;
-            }
+            LocationListener listener = location -> {
+                float speed = location.hasSpeed()
+                        ? location.getSpeed() * 3.6f
+                        : 0;
 
-            if (locationManager.isProviderEnabled(
-                    LocationManager.GPS_PROVIDER
-            )) {
-
-                tvGpsStatus.setText("GPS: در انتظار سیگنال");
-
-                locationManager.requestLocationUpdates(
-                        LocationManager.GPS_PROVIDER,
-                        1000,
-                        1,
-                        this
+                tvSpeed.setText(
+                        String.valueOf(Math.round(speed))
                 );
 
-            } else {
-                tvGpsStatus.setText("GPS: غیرفعال");
-                tvSpeed.setText("0");
-            }
+                tvGpsStatus.setText("GPS • CONNECTED");
+            };
 
-        } catch (SecurityException e) {
-            tvGpsStatus.setText("GPS: خطای دسترسی");
-        }
-    }
-
-    @Override
-    public void onLocationChanged(@NonNull Location location) {
-
-        if (location.hasSpeed()) {
-            int speedKmH = Math.round(
-                    location.getSpeed() * 3.6f
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    1000,
+                    1,
+                    listener
             );
 
-            tvSpeed.setText(String.valueOf(speedKmH));
-
-        } else {
-            tvSpeed.setText("0");
-        }
-
-        tvGpsStatus.setText("GPS: متصل");
-    }
-
-    @Override
-    public void onProviderEnabled(@NonNull String provider) {
-
-        if (LocationManager.GPS_PROVIDER.equals(provider)) {
-            tvGpsStatus.setText("GPS: در انتظار سیگنال");
-        }
-    }
-
-    @Override
-    public void onProviderDisabled(@NonNull String provider) {
-
-        if (LocationManager.GPS_PROVIDER.equals(provider)) {
-            tvGpsStatus.setText("GPS: غیرفعال");
-            tvSpeed.setText("0");
+        } catch (SecurityException e) {
+            tvGpsStatus.setText("GPS • ERROR");
         }
     }
 
     @Override
     public void onRequestPermissionsResult(
             int requestCode,
-            @NonNull String[] permissions,
-            @NonNull int[] grantResults
+            String[] permissions,
+            int[] grantResults
     ) {
         super.onRequestPermissionsResult(
                 requestCode,
@@ -291,27 +184,22 @@ public class MainActivity extends AppCompatActivity
                 grantResults
         );
 
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-
-            if (grantResults.length > 0 &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                startLocationUpdates();
-
-            } else {
-                tvGpsStatus.setText("GPS: دسترسی رد شد");
-            }
+        if (requestCode == 100
+                && grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startGPSUpdates();
         }
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onResume() {
+        super.onResume();
+        handler.post(clockRunnable);
+    }
 
-        handler.removeCallbacksAndMessages(null);
-
-        if (locationManager != null) {
-            locationManager.removeUpdates(this);
-        }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(clockRunnable);
     }
 }
