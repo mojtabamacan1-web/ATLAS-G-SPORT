@@ -1,7 +1,8 @@
-
 package com.atlasg.sport;
 
 import android.Manifest;
+import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -10,36 +11,32 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     private TextView tvClock;
     private TextView tvDate;
     private TextView tvSpeed;
+    private TextView tvSongName;
+    private TextView tvArtist;
 
-    private Button btnMap;
     private Button btnPlay;
-    private Button btnApps;
-    private Button btnSettings;
-    private Button btnAbout;
+    private Button btnPrev;
+    private Button btnNext;
 
     private LocationManager locationManager;
-    private LocationListener locationListener;
 
-    private final Handler handler = new Handler();
-
-    private boolean isPlaying = false;
+    private final Handler handler =
+            new Handler(Looper.getMainLooper());
 
     private final Runnable clockRunnable = new Runnable() {
         @Override
@@ -49,18 +46,52 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private final LocationListener locationListener =
+            new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    double speed = location.getSpeed() * 3.6;
+                    tvSpeed.setText(
+                            String.format(Locale.US, "%.0f\nkm/h", speed)
+                    );
+                }
+
+                @Override
+                public void onProviderEnabled(String provider) {
+                }
+
+                @Override
+                public void onProviderDisabled(String provider) {
+                }
+            };
+
+    private final MediaAccessService.MediaUpdateListener
+            mediaUpdateListener = (title, artist, packageName, isPlaying) -> {
+
+        tvSongName.setText(title);
+        tvArtist.setText(
+                artist == null || artist.isEmpty()
+                        ? "Media player"
+                        : artist
+        );
+
+        btnPlay.setText(isPlaying ? "Ⅱ" : "▶");
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
 
-        getWindow().getDecorView().setSystemUiVisibility(5894);
-
         initializeViews();
         setupButtons();
+
+        locationManager = (LocationManager)
+                getSystemService(LOCATION_SERVICE);
+
         updateClock();
-        setupGPS();
+        startLocationUpdates();
     }
 
     private void initializeViews() {
@@ -69,111 +100,131 @@ public class MainActivity extends AppCompatActivity {
         tvDate = findViewById(R.id.tvDate);
         tvSpeed = findViewById(R.id.tvSpeed);
 
-        btnMap = findViewById(R.id.btnMap);
+        tvSongName = findViewById(R.id.tvSongName);
+        tvArtist = findViewById(R.id.tvArtist);
+
         btnPlay = findViewById(R.id.btnPlay);
-        btnApps = findViewById(R.id.btnApps);
-        btnSettings = findViewById(R.id.btnSettings);
-        btnAbout = findViewById(R.id.btnAbout);
+        btnPrev = findViewById(R.id.btnPrev);
+        btnNext = findViewById(R.id.btnNext);
+    }
+
+    private void setupButtons() {
+
+        Button btnMap = findViewById(R.id.btnMap);
+        Button btnApps = findViewById(R.id.btnApps);
+        Button btnSettings = findViewById(R.id.btnSettings);
+        Button btnAbout = findViewById(R.id.btnAbout);
+
+        btnMap.setOnClickListener(v -> {
+            try {
+                Intent intent = new Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("geo:0,0?q=Yazd")
+                );
+                startActivity(intent);
+            } catch (Exception e) {
+                showToast("برنامه نقشه پیدا نشد");
+            }
+        });
+
+        btnApps.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            startActivity(intent);
+        });
+
+        btnSettings.setOnClickListener(v -> {
+            startActivity(new Intent(Settings.ACTION_SETTINGS));
+        });
+
+        btnAbout.setOnClickListener(v -> {
+            showToast("ATLAS G SPORT - Version 1.0");
+        });
+
+        btnPlay.setOnClickListener(v -> {
+            if (!hasNotificationAccess()) {
+                openNotificationSettings();
+                return;
+            }
+
+            MediaAccessService.playPause();
+        });
+
+        btnPrev.setOnClickListener(v -> {
+            if (!hasNotificationAccess()) {
+                openNotificationSettings();
+                return;
+            }
+
+            MediaAccessService.previous();
+        });
+
+        btnNext.setOnClickListener(v -> {
+            if (!hasNotificationAccess()) {
+                openNotificationSettings();
+                return;
+            }
+
+            MediaAccessService.next();
+        });
+    }
+
+    private boolean hasNotificationAccess() {
+
+        String enabledListeners = Settings.Secure.getString(
+                getContentResolver(),
+                "enabled_notification_listeners"
+        );
+
+        if (enabledListeners == null) {
+            return false;
+        }
+
+        ComponentName component = new ComponentName(
+                this,
+                MediaAccessService.class
+        );
+
+        return enabledListeners.contains(
+                component.flattenToString()
+        );
+    }
+
+    private void openNotificationSettings() {
+
+        showToast("لطفاً دسترسی اعلان‌ها را برای ATLAS G SPORT فعال کن");
+
+        try {
+            startActivity(
+                    new Intent(
+                            Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS
+                    )
+            );
+        } catch (Exception e) {
+            showToast("تنظیمات دسترسی اعلان‌ها در دسترس نیست");
+        }
     }
 
     private void updateClock() {
 
         Date now = new Date();
 
-        SimpleDateFormat timeFormat =
+        SimpleDateFormat clockFormat =
                 new SimpleDateFormat("HH:mm", Locale.getDefault());
 
         SimpleDateFormat dateFormat =
-                new SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault());
+                new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
 
-        tvClock.setText(timeFormat.format(now));
+        tvClock.setText(clockFormat.format(now));
         tvDate.setText(dateFormat.format(now));
     }
 
-    private void setupButtons() {
+    private void startLocationUpdates() {
 
-        btnPlay.setOnClickListener(v -> {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
 
-            isPlaying = !isPlaying;
-
-            btnPlay.setText(
-                    isPlaying ? "Ⅱ\nموسیقی" : "♫\nموسیقی"
-            );
-
-            Toast.makeText(
-                    this,
-                    isPlaying ? "Music selected" : "Music paused",
-                    Toast.LENGTH_SHORT
-            ).show();
-        });
-
-        btnMap.setOnClickListener(v -> {
-
-            try {
-                Intent intent = new Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("geo:0,0?q=Iran")
-                );
-
-                startActivity(intent);
-
-            } catch (Exception e) {
-                Toast.makeText(
-                        this,
-                        "No map application found",
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
-        });
-
-        btnSettings.setOnClickListener(v -> {
-
-            startActivity(
-                    new Intent(Settings.ACTION_SETTINGS)
-            );
-        });
-
-        btnApps.setOnClickListener(v -> {
-
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_LAUNCHER);
-
-            try {
-                startActivity(
-                        new Intent(Intent.ACTION_MAIN)
-                                .addCategory(Intent.CATEGORY_HOME)
-                );
-            } catch (Exception e) {
-                Toast.makeText(
-                        this,
-                        "Apps unavailable",
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
-        });
-
-        btnAbout.setOnClickListener(v -> {
-
-            Toast.makeText(
-                    this,
-                    "ATLAS G SPORT - Luxury Sport Edition",
-                    Toast.LENGTH_LONG
-            ).show();
-        });
-    }
-
-    private void setupGPS() {
-
-        locationManager =
-                (LocationManager) getSystemService(LOCATION_SERVICE);
-
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-        ) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(
-                    this,
+            requestPermissions(
                     new String[]{
                             Manifest.permission.ACCESS_FINE_LOCATION,
                             Manifest.permission.ACCESS_COARSE_LOCATION
@@ -184,38 +235,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        startGPSUpdates();
-    }
-
-    private void startGPSUpdates() {
-
         try {
-
-            locationListener = location -> {
-
-                float speed = location.hasSpeed()
-                        ? location.getSpeed() * 3.6f
-                        : 0;
-
-                tvSpeed.setText(
-                        Math.round(speed) + " km/h"
-                );
-            };
-
             locationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
                     1000,
                     1,
                     locationListener
             );
-
-        } catch (SecurityException e) {
-
-            Toast.makeText(
-                    this,
-                    "GPS permission required",
-                    Toast.LENGTH_SHORT
-            ).show();
+        } catch (SecurityException ignored) {
         }
     }
 
@@ -225,25 +252,29 @@ public class MainActivity extends AppCompatActivity {
             String[] permissions,
             int[] grantResults
     ) {
-
         super.onRequestPermissionsResult(
                 requestCode,
                 permissions,
                 grantResults
         );
 
-        if (requestCode == 100
-                && grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == 100 &&
+                grantResults.length > 0 &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-            startGPSUpdates();
+            startLocationUpdates();
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
         handler.post(clockRunnable);
+
+        MediaAccessService.setUiListener(mediaUpdateListener);
+
+        startLocationUpdates();
     }
 
     @Override
@@ -252,8 +283,22 @@ public class MainActivity extends AppCompatActivity {
 
         handler.removeCallbacks(clockRunnable);
 
-        if (locationManager != null && locationListener != null) {
+        MediaAccessService.setUiListener(null);
+
+        if (locationManager != null &&
+                checkSelfPermission(
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED) {
+
             locationManager.removeUpdates(locationListener);
         }
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(
+                this,
+                message,
+                Toast.LENGTH_LONG
+        ).show();
     }
 }
