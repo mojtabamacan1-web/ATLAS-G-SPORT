@@ -1,4 +1,3 @@
-
 package com.atlasg.sport;
 
 import android.service.notification.NotificationListenerService;
@@ -26,6 +25,8 @@ public class MediaAccessService extends NotificationListenerService {
 
     private static MediaAccessService instance;
 
+    private static MediaUpdateListener savedListener;
+
     private MediaSessionManager sessionManager;
     private MediaController activeController;
     private MediaController.Callback controllerCallback;
@@ -43,6 +44,7 @@ public class MediaAccessService extends NotificationListenerService {
         super.onCreate();
 
         instance = this;
+        uiListener = savedListener;
 
         sessionManager = (MediaSessionManager)
                 getSystemService(MEDIA_SESSION_SERVICE);
@@ -59,6 +61,10 @@ public class MediaAccessService extends NotificationListenerService {
             );
 
             refreshSessions();
+
+            if (uiListener != null) {
+                publishCurrentMedia();
+            }
 
         } catch (SecurityException e) {
             publishEmpty("Notification access required");
@@ -80,7 +86,6 @@ public class MediaAccessService extends NotificationListenerService {
         if (sessionManager == null) return;
 
         try {
-
             List<MediaController> controllers =
                     sessionManager.getActiveSessions(
                             new ComponentName(
@@ -92,7 +97,6 @@ public class MediaAccessService extends NotificationListenerService {
             MediaController selected = null;
 
             if (controllers != null) {
-
                 for (MediaController controller : controllers) {
 
                     PlaybackState state =
@@ -121,11 +125,14 @@ public class MediaAccessService extends NotificationListenerService {
 
     private void setActiveController(MediaController controller) {
 
-        if (activeController != null && controllerCallback != null) {
+        if (activeController != null &&
+                controllerCallback != null) {
+
             activeController.unregisterCallback(controllerCallback);
         }
 
         activeController = controller;
+        controllerCallback = null;
 
         if (activeController == null) {
             publishEmpty("No active music player");
@@ -147,6 +154,7 @@ public class MediaAccessService extends NotificationListenerService {
             @Override
             public void onSessionDestroyed() {
                 activeController = null;
+                controllerCallback = null;
                 refreshSessions();
             }
         };
@@ -178,8 +186,13 @@ public class MediaAccessService extends NotificationListenerService {
                     MediaMetadata.METADATA_KEY_ARTIST
             );
 
-            if (t != null && !t.isEmpty()) title = t;
-            if (a != null && !a.isEmpty()) artist = a;
+            if (t != null && !t.isEmpty()) {
+                title = t;
+            }
+
+            if (a != null && !a.isEmpty()) {
+                artist = a;
+            }
         }
 
         PlaybackState state = activeController.getPlaybackState();
@@ -218,6 +231,8 @@ public class MediaAccessService extends NotificationListenerService {
 
     public static void setUiListener(MediaUpdateListener listener) {
 
+        savedListener = listener;
+
         if (instance != null) {
             instance.uiListener = listener;
             instance.publishCurrentMedia();
@@ -227,7 +242,9 @@ public class MediaAccessService extends NotificationListenerService {
     public static void playPause() {
 
         if (instance == null ||
-                instance.activeController == null) return;
+                instance.activeController == null) {
+            return;
+        }
 
         PlaybackState state =
                 instance.activeController.getPlaybackState();
@@ -235,11 +252,13 @@ public class MediaAccessService extends NotificationListenerService {
         if (state != null &&
                 state.getState() == PlaybackState.STATE_PLAYING) {
 
-            instance.activeController.getTransportControls().pause();
+            instance.activeController
+                    .getTransportControls().pause();
 
         } else {
 
-            instance.activeController.getTransportControls().play();
+            instance.activeController
+                    .getTransportControls().play();
         }
     }
 
@@ -281,6 +300,8 @@ public class MediaAccessService extends NotificationListenerService {
             activeController.unregisterCallback(controllerCallback);
         }
 
+        activeController = null;
+        controllerCallback = null;
         instance = null;
 
         super.onDestroy();
