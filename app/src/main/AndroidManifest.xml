@@ -1,9 +1,12 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Internet -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- GPS and location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -13,6 +16,7 @@
         android:theme="@style/Theme.AtlasGSport"
         android:usesCleartextTraffic="true">
 
+        <!-- Main dashboard -->
         <activity
             android:name=".MainActivity"
             android:screenOrientation="landscape"
@@ -25,6 +29,7 @@
 
         </activity>
 
+        <!-- Universal media access -->
         <service
             android:name=".MediaAccessService"
             android:label="ATLAS G SPORT Media Access"
