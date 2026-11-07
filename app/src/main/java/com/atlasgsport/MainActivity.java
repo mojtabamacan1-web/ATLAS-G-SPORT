@@ -10,8 +10,10 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -22,14 +24,20 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView tvClock, tvDate, tvSpeed;
-    private TextView tvGpsStatus, tvSongName;
+    private TextView tvClock;
+    private TextView tvDate;
+    private TextView tvSpeed;
 
-    private Button btnPlay, btnPrev, btnNext;
-    private Button btnMap, btnSettings;
+    private Button btnMap;
+    private Button btnPlay;
+    private Button btnApps;
+    private Button btnSettings;
+    private Button btnAbout;
+
+    private LocationManager locationManager;
+    private LocationListener locationListener;
 
     private final Handler handler = new Handler();
-    private LocationManager locationManager;
 
     private boolean isPlaying = false;
 
@@ -44,34 +52,31 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
-        getWindow().getDecorView().setSystemUiVisibility(
-                5894
-        );
+        getWindow().getDecorView().setSystemUiVisibility(5894);
 
         initializeViews();
-        updateClock();
         setupButtons();
+        updateClock();
         setupGPS();
     }
 
     private void initializeViews() {
+
         tvClock = findViewById(R.id.tvClock);
         tvDate = findViewById(R.id.tvDate);
         tvSpeed = findViewById(R.id.tvSpeed);
-        tvGpsStatus = findViewById(R.id.tvGpsStatus);
-        tvSongName = findViewById(R.id.tvSongName);
 
-        btnPlay = findViewById(R.id.btnPlay);
-        btnPrev = findViewById(R.id.btnPrev);
-        btnNext = findViewById(R.id.btnNext);
         btnMap = findViewById(R.id.btnMap);
+        btnPlay = findViewById(R.id.btnPlay);
+        btnApps = findViewById(R.id.btnApps);
         btnSettings = findViewById(R.id.btnSettings);
+        btnAbout = findViewById(R.id.btnAbout);
     }
 
     private void updateClock() {
-        if (tvClock == null || tvDate == null) return;
 
         Date now = new Date();
 
@@ -88,40 +93,77 @@ public class MainActivity extends AppCompatActivity {
     private void setupButtons() {
 
         btnPlay.setOnClickListener(v -> {
+
             isPlaying = !isPlaying;
 
-            btnPlay.setText(isPlaying ? "Ⅱ" : "▶");
-
-            tvSongName.setText(
-                    isPlaying ? "Demo playback" : "Playback paused"
+            btnPlay.setText(
+                    isPlaying ? "Ⅱ\nموسیقی" : "♫\nموسیقی"
             );
+
+            Toast.makeText(
+                    this,
+                    isPlaying ? "Music selected" : "Music paused",
+                    Toast.LENGTH_SHORT
+            ).show();
         });
 
-        btnPrev.setOnClickListener(v ->
-                tvSongName.setText("Previous track")
-        );
-
-        btnNext.setOnClickListener(v ->
-                tvSongName.setText("Next track")
-        );
-
         btnMap.setOnClickListener(v -> {
-            Intent intent = new Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("geo:0,0?q=Iran")
-            );
 
-            startActivity(intent);
+            try {
+                Intent intent = new Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("geo:0,0?q=Iran")
+                );
+
+                startActivity(intent);
+
+            } catch (Exception e) {
+                Toast.makeText(
+                        this,
+                        "No map application found",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
         });
 
         btnSettings.setOnClickListener(v -> {
-            startActivity(new Intent(
-                    android.provider.Settings.ACTION_SETTINGS
-            ));
+
+            startActivity(
+                    new Intent(Settings.ACTION_SETTINGS)
+            );
+        });
+
+        btnApps.setOnClickListener(v -> {
+
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+            try {
+                startActivity(
+                        new Intent(Intent.ACTION_MAIN)
+                                .addCategory(Intent.CATEGORY_HOME)
+                );
+            } catch (Exception e) {
+                Toast.makeText(
+                        this,
+                        "Apps unavailable",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+
+        btnAbout.setOnClickListener(v -> {
+
+            Toast.makeText(
+                    this,
+                    "ATLAS G SPORT - Luxury Sport Edition",
+                    Toast.LENGTH_LONG
+            ).show();
         });
     }
 
     private void setupGPS() {
+
         locationManager =
                 (LocationManager) getSystemService(LOCATION_SERVICE);
 
@@ -139,7 +181,6 @@ public class MainActivity extends AppCompatActivity {
                     100
             );
 
-            tvGpsStatus.setText("GPS • PERMISSION");
             return;
         }
 
@@ -147,28 +188,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startGPSUpdates() {
+
         try {
-            LocationListener listener = location -> {
+
+            locationListener = location -> {
+
                 float speed = location.hasSpeed()
                         ? location.getSpeed() * 3.6f
                         : 0;
 
                 tvSpeed.setText(
-                        String.valueOf(Math.round(speed))
+                        Math.round(speed) + " km/h"
                 );
-
-                tvGpsStatus.setText("GPS • CONNECTED");
             };
 
             locationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
                     1000,
                     1,
-                    listener
+                    locationListener
             );
 
         } catch (SecurityException e) {
-            tvGpsStatus.setText("GPS • ERROR");
+
+            Toast.makeText(
+                    this,
+                    "GPS permission required",
+                    Toast.LENGTH_SHORT
+            ).show();
         }
     }
 
@@ -178,6 +225,7 @@ public class MainActivity extends AppCompatActivity {
             String[] permissions,
             int[] grantResults
     ) {
+
         super.onRequestPermissionsResult(
                 requestCode,
                 permissions,
@@ -187,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 100
                 && grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
             startGPSUpdates();
         }
     }
@@ -200,6 +249,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+
         handler.removeCallbacks(clockRunnable);
+
+        if (locationManager != null && locationListener != null) {
+            locationManager.removeUpdates(locationListener);
+        }
     }
 }
