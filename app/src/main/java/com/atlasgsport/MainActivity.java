@@ -1,3 +1,4 @@
+
 package com.atlasg.sport;
 
 import android.Manifest;
@@ -48,27 +49,30 @@ public class MainActivity extends Activity {
 
     private final LocationListener locationListener =
             new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    double speed = location.getSpeed() * 3.6;
-                    tvSpeed.setText(
-                            String.format(Locale.US, "%.0f\nkm/h", speed)
-                    );
-                }
 
-                @Override
-                public void onProviderEnabled(String provider) {
-                }
+        @Override
+        public void onLocationChanged(Location location) {
+            double speed = location.getSpeed() * 3.6;
 
-                @Override
-                public void onProviderDisabled(String provider) {
-                }
-            };
+            tvSpeed.setText(
+                    String.format(Locale.US, "%.0f\nkm/h", speed)
+            );
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+        }
+    };
 
     private final MediaAccessService.MediaUpdateListener
             mediaUpdateListener = (title, artist, packageName, isPlaying) -> {
 
         tvSongName.setText(title);
+
         tvArtist.setText(
                 artist == null || artist.isEmpty()
                         ? "Media player"
@@ -115,32 +119,53 @@ public class MainActivity extends Activity {
         Button btnSettings = findViewById(R.id.btnSettings);
         Button btnAbout = findViewById(R.id.btnAbout);
 
+        // نقشه
         btnMap.setOnClickListener(v -> {
             try {
                 Intent intent = new Intent(
                         Intent.ACTION_VIEW,
                         Uri.parse("geo:0,0?q=Yazd")
                 );
+
                 startActivity(intent);
+
             } catch (Exception e) {
                 showToast("برنامه نقشه پیدا نشد");
             }
         });
 
+        // فهرست برنامه‌های نصب‌شده
         btnApps.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_HOME);
-            startActivity(intent);
+            try {
+                Intent intent = new Intent(
+                        MainActivity.this,
+                        AppsActivity.class
+                );
+
+                startActivity(intent);
+
+            } catch (Exception e) {
+                showToast("خطا در باز کردن فهرست برنامه‌ها");
+            }
         });
 
+        // تنظیمات اندروید
         btnSettings.setOnClickListener(v -> {
-            startActivity(new Intent(Settings.ACTION_SETTINGS));
+            try {
+                startActivity(
+                        new Intent(Settings.ACTION_SETTINGS)
+                );
+            } catch (Exception e) {
+                showToast("تنظیمات در دسترس نیست");
+            }
         });
 
+        // درباره ما
         btnAbout.setOnClickListener(v -> {
             showToast("ATLAS G SPORT - Version 1.0");
         });
 
+        // پخش و توقف موسیقی
         btnPlay.setOnClickListener(v -> {
             if (!hasNotificationAccess()) {
                 openNotificationSettings();
@@ -150,6 +175,7 @@ public class MainActivity extends Activity {
             MediaAccessService.playPause();
         });
 
+        // آهنگ قبلی
         btnPrev.setOnClickListener(v -> {
             if (!hasNotificationAccess()) {
                 openNotificationSettings();
@@ -159,6 +185,7 @@ public class MainActivity extends Activity {
             MediaAccessService.previous();
         });
 
+        // آهنگ بعدی
         btnNext.setOnClickListener(v -> {
             if (!hasNotificationAccess()) {
                 openNotificationSettings();
@@ -192,7 +219,9 @@ public class MainActivity extends Activity {
 
     private void openNotificationSettings() {
 
-        showToast("لطفاً دسترسی اعلان‌ها را برای ATLAS G SPORT فعال کن");
+        showToast(
+                "لطفاً دسترسی اعلان‌ها را برای ATLAS G SPORT فعال کن"
+        );
 
         try {
             startActivity(
@@ -201,7 +230,9 @@ public class MainActivity extends Activity {
                     )
             );
         } catch (Exception e) {
-            showToast("تنظیمات دسترسی اعلان‌ها در دسترس نیست");
+            showToast(
+                    "تنظیمات دسترسی اعلان‌ها در دسترس نیست"
+            );
         }
     }
 
@@ -210,10 +241,16 @@ public class MainActivity extends Activity {
         Date now = new Date();
 
         SimpleDateFormat clockFormat =
-                new SimpleDateFormat("HH:mm", Locale.getDefault());
+                new SimpleDateFormat(
+                        "HH:mm",
+                        Locale.getDefault()
+                );
 
         SimpleDateFormat dateFormat =
-                new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
+                new SimpleDateFormat(
+                        "yyyy/MM/dd",
+                        Locale.getDefault()
+                );
 
         tvClock.setText(clockFormat.format(now));
         tvDate.setText(dateFormat.format(now));
@@ -221,8 +258,9 @@ public class MainActivity extends Activity {
 
     private void startLocationUpdates() {
 
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(
+                Manifest.permission.ACCESS_FINE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED) {
 
             requestPermissions(
                     new String[]{
@@ -242,6 +280,7 @@ public class MainActivity extends Activity {
                     1,
                     locationListener
             );
+
         } catch (SecurityException ignored) {
         }
     }
@@ -270,9 +309,12 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
+        handler.removeCallbacks(clockRunnable);
         handler.post(clockRunnable);
 
-        MediaAccessService.setUiListener(mediaUpdateListener);
+        MediaAccessService.setUiListener(
+                mediaUpdateListener
+        );
 
         startLocationUpdates();
     }
@@ -295,6 +337,7 @@ public class MainActivity extends Activity {
     }
 
     private void showToast(String message) {
+
         Toast.makeText(
                 this,
                 message,
