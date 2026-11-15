@@ -161,9 +161,13 @@ public class MainActivity extends Activity {
             }
         });
 
-        // درباره ما
+        // درباره ما: فقط نام و شناسه تلگرام طراح
         btnAbout.setOnClickListener(v -> {
-            showToast("ATLAS G SPORT - Version 1.0");
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("درباره ما")
+                    .setMessage("مهندس مجتبی زارع\\n@Mangentzare")
+                    .setPositiveButton("تأیید", null)
+                    .show();
         });
 
         // پخش و توقف موسیقی
