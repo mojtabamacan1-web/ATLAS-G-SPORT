@@ -109,13 +109,12 @@
             android:textColor="@color/luxury_gold"
             android:textSize="10sp"
             android:textStyle="bold"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="☀"
-            android:textColor="#EACB72"
-            android:textSize="42sp"/>
+        <ImageView
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="12dp"
+            android:src="@drawable/ic_sun"
+            android:contentDescription="Weather"/>
         <TextView
             android:id="@+id/tvWeatherTemp"
             android:layout_width="wrap_content"
@@ -308,7 +307,10 @@
             android:background="@drawable/bg_control_button"
             android:backgroundTint="@null"
             android:minWidth="0dp"
-            android:text="⌖\nنقشه"
+            android:text="نقشه"
+            android:drawableTop="@drawable/ic_map"
+            android:drawablePadding="2dp"
+            android:gravity="center"
             android:textAllCaps="false"
             android:textColor="@color/luxury_cream"
             android:textSize="13sp"/>
@@ -393,7 +395,10 @@
             android:background="@drawable/bg_control_button"
             android:backgroundTint="@null"
             android:minWidth="0dp"
-            android:text="▦\nبرنامه‌ها"
+            android:text="برنامه‌ها"
+            android:drawableTop="@drawable/ic_apps"
+            android:drawablePadding="2dp"
+            android:gravity="center"
             android:textAllCaps="false"
             android:textColor="@color/luxury_cream"
             android:textSize="12sp"/>
@@ -406,7 +411,10 @@
             android:background="@drawable/bg_control_button"
             android:backgroundTint="@null"
             android:minWidth="0dp"
-            android:text="⚙\nتنظیمات"
+            android:text="تنظیمات"
+            android:drawableTop="@drawable/ic_settings"
+            android:drawablePadding="2dp"
+            android:gravity="center"
             android:textAllCaps="false"
             android:textColor="@color/luxury_cream"
             android:textSize="12sp"/>
@@ -419,7 +427,10 @@
             android:background="@drawable/bg_control_button"
             android:backgroundTint="@null"
             android:minWidth="0dp"
-            android:text="ⓘ\nدرباره ما"
+            android:text="درباره ما"
+            android:drawableTop="@drawable/ic_info"
+            android:drawablePadding="2dp"
+            android:gravity="center"
             android:textAllCaps="false"
             android:textColor="@color/luxury_cream"
             android:textSize="12sp"/>
