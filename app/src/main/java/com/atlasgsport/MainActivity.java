@@ -92,6 +92,7 @@ public class MainActivity extends Activity {
         initializeViews();
         setupButtons();
         applySavedLanguage();
+        applySavedAppearance();
 
         locationManager = (LocationManager)
                 getSystemService(LOCATION_SERVICE);
@@ -151,23 +152,14 @@ public class MainActivity extends Activity {
             }
         });
 
-        // تنظیمات اندروید
-        btnSettings.setOnClickListener(v -> new AlertDialog.Builder(this)
-                .setTitle("زبان لانچر / Launcher language")
-                .setItems(new String[]{"فارسی", "English", "تنظیمات دستگاه"}, (dialog, which) -> {
-                    if (which == 2) {
-                        try { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
-                        catch (Exception e) { showToast("تنظیمات دستگاه در دسترس نیست"); }
-                    } else {
-                        getSharedPreferences("atlas_settings", MODE_PRIVATE).edit().putString("language", which == 0 ? "fa" : "en").apply();
-                        boolean en = which == 1;
-                        btnMap.setText(en ? "Maps" : "نقشه");
-                        btnApps.setText(en ? "Apps" : "برنامه‌ها");
-                        btnSettings.setText(en ? "Settings" : "تنظیمات");
-                        btnAbout.setText(en ? "About" : "درباره ما");
-                        showToast(en ? "English selected" : "زبان فارسی انتخاب شد");
-                    }
-                }).show());
+        // مرکز شخصی‌سازی کامل لانچر
+        btnSettings.setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(MainActivity.this, CustomizationActivity.class));
+            } catch (Exception e) {
+                showToast("مرکز شخصی‌سازی در دسترس نیست");
+            }
+        });
 
         // درباره ما
         btnAbout.setOnClickListener(v -> {
@@ -376,6 +368,38 @@ public class MainActivity extends Activity {
             for (int i = 0; i < group.getChildCount(); i++) translateTree(group.getChildAt(i), en);
         }
     }
+
+    private void applySavedAppearance() {
+        android.content.SharedPreferences p = getSharedPreferences("atlas_settings", MODE_PRIVATE);
+        boolean light = "light".equals(p.getString("theme", "dark"));
+        int bg = light ? android.graphics.Color.rgb(247,244,232) : android.graphics.Color.rgb(8,8,8);
+        int card = light ? android.graphics.Color.WHITE : android.graphics.Color.rgb(20,20,20);
+        int accent = android.graphics.Color.parseColor(p.getString("accent", "#D4AF37"));
+        android.view.View root = ((android.view.ViewGroup)findViewById(android.R.id.content)).getChildAt(0);
+        root.setBackgroundColor(bg);
+        int[] cards = {R.id.weatherPanel, R.id.centerPanel, R.id.tirePanel, R.id.bottomBar};
+        for (int id : cards) {
+            android.view.View v = findViewById(id);
+            if (v != null) {
+                v.setBackgroundTintList(android.content.res.ColorStateList.valueOf(card));
+                v.setVisibility(id == R.id.weatherPanel ? (p.getBoolean("show_weather", true) ? android.view.View.VISIBLE : android.view.View.GONE)
+                    : id == R.id.centerPanel ? (p.getBoolean("show_car", true) ? android.view.View.VISIBLE : android.view.View.GONE)
+                    : id == R.id.tirePanel ? (p.getBoolean("show_tyres", true) ? android.view.View.VISIBLE : android.view.View.GONE)
+                    : (p.getBoolean("show_dock", true) ? android.view.View.VISIBLE : android.view.View.GONE));
+            }
+        }
+        int text = light ? android.graphics.Color.rgb(48,43,32) : android.graphics.Color.rgb(245,240,220);
+        TextView[] labels = {tvClock, tvDate, tvSongName, tvArtist};
+        for (TextView label : labels) if (label != null) label.setTextColor(text);
+        tvSpeed.setVisibility(p.getBoolean("show_speed", true) ? android.view.View.VISIBLE : android.view.View.GONE);
+        int musicVisibility = p.getBoolean("show_music", true) ? android.view.View.VISIBLE : android.view.View.GONE;
+        tvSongName.setVisibility(musicVisibility);
+        tvArtist.setVisibility(musicVisibility);
+        btnPlay.setVisibility(musicVisibility);
+        btnPrev.setVisibility(musicVisibility);
+        btnNext.setVisibility(musicVisibility);
+    }
+
     private void showToast(String message) {
 
         Toast.makeText(
