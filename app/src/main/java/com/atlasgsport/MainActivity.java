@@ -36,6 +36,7 @@ public class MainActivity extends Activity {
     private Button btnNext;
 
     private LocationManager locationManager;
+    private long lastWeatherFetchAt = 0;
 
     private final Handler handler =
             new Handler(Looper.getMainLooper());
@@ -258,7 +259,70 @@ public class MainActivity extends Activity {
                 );
 
         tvClock.setText(clockFormat.format(now));
-        tvDate.setText(dateFormat.format(now));
+        boolean persian = !"en".equals(getSharedPreferences("atlas_settings", MODE_PRIVATE).getString("language", "fa"));
+        if (persian && android.os.Build.VERSION.SDK_INT >= 24) {
+            android.icu.text.SimpleDateFormat persianFormat =
+                    new android.icu.text.SimpleDateFormat("yyyy/MM/dd", new android.icu.util.ULocale("fa_IR"));
+            persianFormat.setCalendar(new android.icu.util.PersianCalendar(new android.icu.util.ULocale("fa_IR")));
+            tvDate.setText(persianFormat.format(now));
+        } else {
+            tvDate.setText(dateFormat.format(now));
+        }
+    }
+
+    private void fetchWeather(Location location) {
+        final double latitude = location.getLatitude();
+        final double longitude = location.getLongitude();
+        new Thread(() -> {
+            java.net.HttpURLConnection connection = null;
+            try {
+                String endpoint = "https://api.open-meteo.com/v1/forecast?latitude="
+                        + latitude + "&longitude=" + longitude
+                        + "&current=temperature_2m,weather_code&timezone=auto";
+                connection = (java.net.HttpURLConnection) new java.net.URL(endpoint).openConnection();
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(8000);
+                connection.setRequestMethod("GET");
+                java.io.BufferedReader reader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+                StringBuilder body = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) body.append(line);
+                reader.close();
+                org.json.JSONObject current = new org.json.JSONObject(body.toString()).getJSONObject("current");
+                final double temperature = current.getDouble("temperature_2m");
+                final int code = current.getInt("weather_code");
+                final String condition = weatherDescription(code);
+                handler.post(() -> {
+                    android.widget.TextView temp = findViewById(R.id.tvWeatherTemp);
+                    android.widget.TextView city = findViewById(R.id.tvWeatherCity);
+                    android.widget.TextView status = findViewById(R.id.tvWeatherCondition);
+                    if (temp != null) temp.setText(String.format(Locale.US, "%.0f°C", temperature));
+                    if (city != null) city.setText("موقعیت فعلی");
+                    if (status != null) status.setText(condition);
+                });
+            } catch (Exception ignored) {
+                handler.post(() -> {
+                    android.widget.TextView status = findViewById(R.id.tvWeatherCondition);
+                    if (status != null) status.setText("دریافت وضعیت هوا ناموفق بود");
+                });
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }).start();
+    }
+
+    private String weatherDescription(int code) {
+        boolean en = "en".equals(getSharedPreferences("atlas_settings", MODE_PRIVATE).getString("language", "fa"));
+        if (code == 0) return en ? "Clear sky" : "آسمان صاف";
+        if (code <= 3) return en ? "Partly cloudy" : "کمی تا نیمه‌ابری";
+        if (code == 45 || code == 48) return en ? "Fog" : "مه‌آلود";
+        if (code >= 51 && code <= 57) return en ? "Drizzle" : "نم‌نم باران";
+        if (code >= 61 && code <= 67) return en ? "Rain" : "بارانی";
+        if (code >= 71 && code <= 77) return en ? "Snow" : "برفی";
+        if (code >= 80 && code <= 82) return en ? "Rain showers" : "رگبار";
+        if (code >= 95) return en ? "Thunderstorm" : "رعدوبرق";
+        return en ? "Current conditions" : "وضعیت فعلی هوا";
     }
 
     private void startLocationUpdates() {
