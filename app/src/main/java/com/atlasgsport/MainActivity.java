@@ -59,6 +59,10 @@ public class MainActivity extends Activity {
             tvSpeed.setText(
                     String.format(Locale.US, "%.0f\nkm/h", speed)
             );
+            if (System.currentTimeMillis() - lastWeatherFetchAt > 30L * 60L * 1000L) {
+                lastWeatherFetchAt = System.currentTimeMillis();
+                fetchWeather(location);
+            }
         }
 
         @Override
