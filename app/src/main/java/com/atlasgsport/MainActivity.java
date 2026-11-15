@@ -3,6 +3,7 @@ package com.atlasg.sport;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -150,15 +151,22 @@ public class MainActivity extends Activity {
         });
 
         // تنظیمات اندروید
-        btnSettings.setOnClickListener(v -> {
-            try {
-                startActivity(
-                        new Intent(Settings.ACTION_SETTINGS)
-                );
-            } catch (Exception e) {
-                showToast("تنظیمات در دسترس نیست");
-            }
-        });
+        btnSettings.setOnClickListener(v -> new AlertDialog.Builder(this)
+                .setTitle("زبان لانچر / Launcher language")
+                .setItems(new String[]{"فارسی", "English", "تنظیمات دستگاه"}, (dialog, which) -> {
+                    if (which == 2) {
+                        try { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
+                        catch (Exception e) { showToast("تنظیمات دستگاه در دسترس نیست"); }
+                    } else {
+                        getSharedPreferences("atlas_settings", MODE_PRIVATE).edit().putString("language", which == 0 ? "fa" : "en").apply();
+                        boolean en = which == 1;
+                        btnMap.setText(en ? "Maps" : "نقشه");
+                        btnApps.setText(en ? "Apps" : "برنامه‌ها");
+                        btnSettings.setText(en ? "Settings" : "تنظیمات");
+                        btnAbout.setText(en ? "About" : "درباره ما");
+                        showToast(en ? "English selected" : "زبان فارسی انتخاب شد");
+                    }
+                }).show());
 
         // درباره ما
         btnAbout.setOnClickListener(v -> {
