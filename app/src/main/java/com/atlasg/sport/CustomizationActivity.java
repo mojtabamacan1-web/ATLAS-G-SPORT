@@ -129,7 +129,8 @@ public class CustomizationActivity extends Activity {
                 String data=prefs.getString("theme","dark")+"|"+prefs.getString("accent","#D4AF37")+"|"+
                     prefs.getBoolean("show_weather",true)+"|"+prefs.getBoolean("show_car",true)+"|"+
                     prefs.getBoolean("show_tyres",true)+"|"+prefs.getBoolean("show_dock",true)+"|"+
-                    prefs.getBoolean("show_speed",true)+"|"+prefs.getBoolean("show_music",true);
+                    prefs.getBoolean("show_speed",true)+"|"+prefs.getBoolean("show_music",true)+"|"+
+                    prefs.getString("dock_order","speed,map,music,apps,settings,about");
                 prefs.edit().putString("profile_"+name,data).apply();
                 Set<String> names=new HashSet<>(prefs.getStringSet("profile_names",new HashSet<>())); names.add(name);
                 prefs.edit().putStringSet("profile_names",names).apply();
@@ -141,10 +142,12 @@ public class CustomizationActivity extends Activity {
         String[] items=names.toArray(new String[0]);
         new AlertDialog.Builder(this).setTitle(s("انتخاب پروفایل","Choose profile")).setItems(items,(d,which)->{
             String[] p=prefs.getString("profile_"+items[which],"").split("\\|");
-            if(p.length==8){SharedPreferences.Editor e=prefs.edit().putString("theme",p[0]).putString("accent",p[1])
+            if(p.length>=8){SharedPreferences.Editor e=prefs.edit().putString("theme",p[0]).putString("accent",p[1])
                 .putBoolean("show_weather",Boolean.parseBoolean(p[2])).putBoolean("show_car",Boolean.parseBoolean(p[3]))
                 .putBoolean("show_tyres",Boolean.parseBoolean(p[4])).putBoolean("show_dock",Boolean.parseBoolean(p[5]))
-                .putBoolean("show_speed",Boolean.parseBoolean(p[6])).putBoolean("show_music",Boolean.parseBoolean(p[7]));e.apply();accent=Color.parseColor(p[1]);buildUi();}
+                .putBoolean("show_speed",Boolean.parseBoolean(p[6])).putBoolean("show_music",Boolean.parseBoolean(p[7]));
+                if(p.length>=9) e.putString("dock_order",p[8]);
+                e.apply();accent=Color.parseColor(p[1]);buildUi();}
         }).show();
     }
     private void section(LinearLayout p,String label,int color){TextView t=text(label,13,accent,true);t.setPadding(0,dp(18),0,dp(6));p.addView(t);}
