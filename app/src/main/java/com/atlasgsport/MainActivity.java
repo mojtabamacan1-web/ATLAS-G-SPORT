@@ -91,6 +91,7 @@ public class MainActivity extends Activity {
 
         initializeViews();
         setupButtons();
+        applySavedLanguage();
 
         locationManager = (LocationManager)
                 getSystemService(LOCATION_SERVICE);
@@ -344,6 +345,33 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void applySavedLanguage() {
+        boolean en = "en".equals(getSharedPreferences("atlas_settings", MODE_PRIVATE).getString("language", "fa"));
+        translateTree(findViewById(android.R.id.content), en);
+    }
+
+    private void translateTree(android.view.View view, boolean en) {
+        if (view instanceof TextView) {
+            TextView t = (TextView) view;
+            String s = t.getText().toString();
+            String[][] pairs = {
+                {"آب‌وهوا", "Weather"}, {"یزد", "Yazd"}, {"نیمه ابری", "Partly cloudy"},
+                {"امروز   فردا   پس‌فردا", "Today   Tomorrow   Next day"},
+                {"فشار باد تایرها", "Tire pressure"}, {"جلو\\n--  |  --", "Front\\n--  |  --"},
+                {"عقب\\n--  |  --", "Rear\\n--  |  --"}, {"● وضعیت نامشخص", "● Status unavailable"},
+                {"موسیقی در حال پخش", "Now playing"}, {"نقشه", "Maps"}, {"برنامه‌ها", "Apps"},
+                {"تنظیمات", "Settings"}, {"درباره ما", "About"}, {"موسیقی", "Music"}
+            };
+            for (String[] p : pairs) {
+                if (en && s.equals(p[0])) { t.setText(p[1]); break; }
+                if (!en && s.equals(p[1])) { t.setText(p[0]); break; }
+            }
+        }
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) translateTree(group.getChildAt(i), en);
+        }
+    }
     private void showToast(String message) {
 
         Toast.makeText(
