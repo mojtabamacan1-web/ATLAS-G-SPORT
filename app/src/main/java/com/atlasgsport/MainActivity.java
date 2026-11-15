@@ -348,6 +348,10 @@ public class MainActivity extends Activity {
     private void applySavedLanguage() {
         boolean en = "en".equals(getSharedPreferences("atlas_settings", MODE_PRIVATE).getString("language", "fa"));
         translateTree(findViewById(android.R.id.content), en);
+        ((Button) findViewById(R.id.btnMap)).setText(en ? "⌖ Maps" : "⌖ نقشه");
+        ((Button) findViewById(R.id.btnApps)).setText(en ? "▦ Apps" : "▦ برنامه‌ها");
+        ((Button) findViewById(R.id.btnSettings)).setText(en ? "⚙ Settings" : "⚙ تنظیمات");
+        ((Button) findViewById(R.id.btnAbout)).setText(en ? "ⓘ About" : "ⓘ درباره ما");
     }
 
     private void translateTree(android.view.View view, boolean en) {
