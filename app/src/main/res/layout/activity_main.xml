@@ -113,7 +113,7 @@
             android:layout_width="46dp"
             android:layout_height="46dp"
             android:layout_marginTop="12dp"
-            android:src="@drawable/ic_sun"
+            android:src="@drawable/ic_weather_sun"
             android:contentDescription="Weather"/>
         <TextView
             android:id="@+id/tvWeatherTemp"
@@ -176,6 +176,11 @@
             android:layout_marginStart="48dp"
             android:layout_marginEnd="48dp"
             android:background="#B89B51"/>
+        <View
+            android:layout_width="260dp"
+            android:layout_height="220dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_glow_orbit"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -230,13 +235,12 @@
             android:textColor="@color/luxury_gold"
             android:textSize="11sp"
             android:textStyle="bold"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="◉"
-            android:textColor="@color/luxury_gold"
-            android:textSize="30sp"/>
+        <ImageView
+            android:layout_width="66dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="14dp"
+            android:src="@drawable/ic_car_outline"
+            android:contentDescription="نمای خودرو"/>
         <TextView
             android:id="@+id/tvFrontTires"
             android:layout_width="wrap_content"
