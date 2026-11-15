@@ -31,6 +31,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".DashboardEditorActivity"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+
+        <activity
             android:name=".AppsActivity"
             android:screenOrientation="landscape"
             android:exported="false" />
