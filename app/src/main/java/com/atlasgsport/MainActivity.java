@@ -493,19 +493,30 @@ public class MainActivity extends Activity {
         int[] cards = {R.id.header, R.id.weatherPanel, R.id.tirePanel, R.id.bottomBar, R.id.musicWidget};
         for (int id : cards) {
             android.view.View v = findViewById(id);
-            if (v != null) v.setBackground(makeSurface(panelTop, panelBottom, stroke, 20));
+            if (v != null) {
+                v.setBackground(makeSurface(panelTop, panelBottom, stroke, 22));
+                v.setElevation(7f * getResources().getDisplayMetrics().density);
+            }
         }
         android.view.View hero = findViewById(R.id.centerPanel);
         if (hero != null) {
             int heroTop = light ? android.graphics.Color.rgb(246, 242, 228) : android.graphics.Color.rgb(34, 40, 50);
             int heroBottom = light ? android.graphics.Color.rgb(225, 218, 198) : android.graphics.Color.rgb(8, 11, 17);
-            hero.setBackground(makeSurface(heroTop, heroBottom, accent, 24));
+            hero.setBackground(makeSurface(heroTop, heroBottom, accent, 26));
+            hero.setElevation(12f * getResources().getDisplayMetrics().density);
         }
 
         TextView[] primaryText = {tvClock, tvSongName, findViewById(R.id.tvFrontTires), findViewById(R.id.tvRearTires), findViewById(R.id.tvWeatherTemp), findViewById(R.id.tvWeatherCity)};
-        for (TextView label : primaryText) if (label != null) label.setTextColor(text);
+        for (TextView label : primaryText) if (label != null) {
+            label.setTextColor(text);
+            label.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
+            label.setLetterSpacing(0.015f);
+        }
         TextView[] mutedText = {tvDate, tvArtist, findViewById(R.id.tvWeatherCondition)};
-        for (TextView label : mutedText) if (label != null) label.setTextColor(muted);
+        for (TextView label : mutedText) if (label != null) {
+            label.setTextColor(muted);
+            label.setTypeface(android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL));
+        }
 
         int gold = accent;
         int[] accentLabels = {R.id.tvSpeed, R.id.tvTpmsStatus};
@@ -536,6 +547,7 @@ public class MainActivity extends Activity {
                     light ? accent : android.graphics.Color.rgb(164, 125, 36),
                     accent, 14));
             btnPlay.setTextColor(android.graphics.Color.BLACK);
+            btnPlay.setElevation(6f * getResources().getDisplayMetrics().density);
         }
 
         findViewById(R.id.weatherPanel).setVisibility(p.getBoolean("show_weather", true) ? android.view.View.VISIBLE : android.view.View.GONE);
