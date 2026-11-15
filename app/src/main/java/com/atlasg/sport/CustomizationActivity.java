@@ -44,6 +44,7 @@ public class CustomizationActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(18),dp(14),dp(18),dp(24));
         root.setBackgroundColor(bg);
+        root.setLayoutDirection(english ? View.LAYOUT_DIRECTION_LTR : View.LAYOUT_DIRECTION_RTL);
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
@@ -56,6 +57,11 @@ public class CustomizationActivity extends Activity {
         content.addView(title);
         TextView subtitle = text(s("داشبورد خودت را طراحی کن","Build your own dashboard"),14,fg,false);
         content.addView(subtitle);
+
+        section(content,s("زبان برنامه","APP LANGUAGE"),fg);
+        LinearLayout languages = row(content);
+        addButton(languages,"فارسی",card,fg,()->setLanguage("fa"));
+        addButton(languages,"English",card,fg,()->setLanguage("en"));
 
         section(content,s("پوسته و ظاهر","THEME & APPEARANCE"),fg);
         LinearLayout themes = row(content);
@@ -93,6 +99,11 @@ public class CustomizationActivity extends Activity {
     }
 
     private void setTheme(String value) { prefs.edit().putString("theme",value).apply(); buildUi(); }
+    private void setLanguage(String value) {
+        prefs.edit().putString("language",value).apply();
+        english = "en".equals(value);
+        buildUi();
+    }
     private void addColor(LinearLayout parent,String hex) {
         Button b=button("●",Color.parseColor(hex),Color.WHITE);
         b.setTextSize(22); b.setOnClickListener(v->{prefs.edit().putString("accent",hex).apply();accent=Color.parseColor(hex);buildUi();});
