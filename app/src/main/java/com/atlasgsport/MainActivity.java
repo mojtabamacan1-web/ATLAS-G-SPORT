@@ -402,6 +402,36 @@ public class MainActivity extends Activity {
         btnPlay.setVisibility(musicVisibility);
         btnPrev.setVisibility(musicVisibility);
         btnNext.setVisibility(musicVisibility);
+        android.view.View musicWidget = findViewById(R.id.musicWidget);
+        if (musicWidget != null) musicWidget.setVisibility(musicVisibility);
+        findViewById(R.id.btnMap).setVisibility(p.getBoolean("dock_show_map", true) ? android.view.View.VISIBLE : android.view.View.GONE);
+        findViewById(R.id.btnApps).setVisibility(p.getBoolean("dock_show_apps", true) ? android.view.View.VISIBLE : android.view.View.GONE);
+        findViewById(R.id.btnSettings).setVisibility(p.getBoolean("dock_show_settings", true) ? android.view.View.VISIBLE : android.view.View.GONE);
+        findViewById(R.id.btnAbout).setVisibility(p.getBoolean("dock_show_about", true) ? android.view.View.VISIBLE : android.view.View.GONE);
+        applyDockOrder();
+    }
+
+    private void applyDockOrder() {
+        android.widget.LinearLayout dock = findViewById(R.id.bottomBar);
+        if (dock == null) return;
+        java.util.LinkedHashMap<String, android.view.View> widgets = new java.util.LinkedHashMap<>();
+        widgets.put("speed", findViewById(R.id.tvSpeed));
+        widgets.put("map", findViewById(R.id.btnMap));
+        widgets.put("music", findViewById(R.id.musicWidget));
+        widgets.put("apps", findViewById(R.id.btnApps));
+        widgets.put("settings", findViewById(R.id.btnSettings));
+        widgets.put("about", findViewById(R.id.btnAbout));
+        String saved = getSharedPreferences("atlas_settings", MODE_PRIVATE).getString("dock_order", "speed,map,music,apps,settings,about");
+        java.util.ArrayList<String> order = new java.util.ArrayList<>();
+        for (String id : saved.split(",")) if (widgets.containsKey(id) && !order.contains(id)) order.add(id);
+        for (String id : widgets.keySet()) if (!order.contains(id)) order.add(id);
+        java.util.HashMap<String, android.view.ViewGroup.LayoutParams> params = new java.util.HashMap<>();
+        for (java.util.Map.Entry<String, android.view.View> entry : widgets.entrySet()) params.put(entry.getKey(), entry.getValue().getLayoutParams());
+        dock.removeAllViews();
+        for (String id : order) {
+            android.view.View child = widgets.get(id);
+            if (child != null) dock.addView(child, params.get(id));
+        }
     }
 
     private void showToast(String message) {
