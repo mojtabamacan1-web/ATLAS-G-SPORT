@@ -464,28 +464,84 @@ public class MainActivity extends Activity {
         }
     }
 
+    private android.graphics.drawable.GradientDrawable makeSurface(
+            int top, int bottom, int stroke, float radius) {
+        android.graphics.drawable.GradientDrawable shape =
+                new android.graphics.drawable.GradientDrawable(
+                        android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
+                        new int[]{top, bottom});
+        shape.setCornerRadius(radius * getResources().getDisplayMetrics().density);
+        shape.setStroke((int)(getResources().getDisplayMetrics().density), stroke);
+        return shape;
+    }
+
     private void applySavedAppearance() {
         android.content.SharedPreferences p = getSharedPreferences("atlas_settings", MODE_PRIVATE);
         boolean light = "light".equals(p.getString("theme", "dark"));
-        int bg = light ? android.graphics.Color.rgb(247,244,232) : android.graphics.Color.rgb(8,8,8);
-        int card = light ? android.graphics.Color.WHITE : android.graphics.Color.rgb(20,20,20);
         int accent = android.graphics.Color.parseColor(p.getString("accent", "#D4AF37"));
+        int text = light ? android.graphics.Color.rgb(52, 46, 34) : android.graphics.Color.rgb(245, 240, 220);
+        int muted = light ? android.graphics.Color.rgb(112, 105, 88) : android.graphics.Color.rgb(164, 167, 175);
+        int panelTop = light ? android.graphics.Color.rgb(255, 254, 248) : android.graphics.Color.rgb(38, 42, 51);
+        int panelBottom = light ? android.graphics.Color.rgb(237, 232, 216) : android.graphics.Color.rgb(15, 18, 24);
+        int stroke = light ? android.graphics.Color.rgb(205, 190, 145) : android.graphics.Color.rgb(102, 91, 59);
+        int rootTop = light ? android.graphics.Color.rgb(250, 247, 236) : android.graphics.Color.rgb(13, 16, 22);
+        int rootBottom = light ? android.graphics.Color.rgb(230, 224, 207) : android.graphics.Color.rgb(5, 7, 10);
+
         android.view.View root = ((android.view.ViewGroup)findViewById(android.R.id.content)).getChildAt(0);
-        root.setBackgroundColor(bg);
-        int[] cards = {R.id.weatherPanel, R.id.centerPanel, R.id.tirePanel, R.id.bottomBar};
+        root.setBackground(makeSurface(rootTop, rootBottom, rootBottom, 0));
+
+        int[] cards = {R.id.header, R.id.weatherPanel, R.id.tirePanel, R.id.bottomBar, R.id.musicWidget};
         for (int id : cards) {
             android.view.View v = findViewById(id);
-            if (v != null) {
-                v.setBackgroundTintList(android.content.res.ColorStateList.valueOf(card));
-                v.setVisibility(id == R.id.weatherPanel ? (p.getBoolean("show_weather", true) ? android.view.View.VISIBLE : android.view.View.GONE)
-                    : id == R.id.centerPanel ? (p.getBoolean("show_car", true) ? android.view.View.VISIBLE : android.view.View.GONE)
-                    : id == R.id.tirePanel ? (p.getBoolean("show_tyres", true) ? android.view.View.VISIBLE : android.view.View.GONE)
-                    : (p.getBoolean("show_dock", true) ? android.view.View.VISIBLE : android.view.View.GONE));
+            if (v != null) v.setBackground(makeSurface(panelTop, panelBottom, stroke, 20));
+        }
+        android.view.View hero = findViewById(R.id.centerPanel);
+        if (hero != null) {
+            int heroTop = light ? android.graphics.Color.rgb(246, 242, 228) : android.graphics.Color.rgb(34, 40, 50);
+            int heroBottom = light ? android.graphics.Color.rgb(225, 218, 198) : android.graphics.Color.rgb(8, 11, 17);
+            hero.setBackground(makeSurface(heroTop, heroBottom, accent, 24));
+        }
+
+        TextView[] primaryText = {tvClock, tvSongName, tvFrontTires, tvRearTires, tvWeatherTemp, tvWeatherCity};
+        for (TextView label : primaryText) if (label != null) label.setTextColor(text);
+        TextView[] mutedText = {tvDate, tvArtist, findViewById(R.id.tvWeatherCondition)};
+        for (TextView label : mutedText) if (label != null) label.setTextColor(muted);
+
+        int gold = accent;
+        int[] accentLabels = {R.id.tvSpeed, R.id.tvTpmsStatus};
+        for (int id : accentLabels) {
+            TextView label = findViewById(id);
+            if (label != null) label.setTextColor(id == R.id.tvSpeed ? android.graphics.Color.BLACK : gold);
+        }
+        android.view.View speed = findViewById(R.id.tvSpeed);
+        if (speed != null) speed.setBackground(makeSurface(
+                light ? accent : android.graphics.Color.rgb(242, 216, 135),
+                light ? accent : android.graphics.Color.rgb(164, 125, 36),
+                light ? accent : android.graphics.Color.rgb(255, 231, 165), 16));
+
+        int[] buttonIds = {R.id.btnMap, R.id.btnApps, R.id.btnSettings, R.id.btnAbout, R.id.btnPrev, R.id.btnNext};
+        for (int id : buttonIds) {
+            Button button = findViewById(id);
+            if (button != null) {
+                button.setBackground(makeSurface(
+                        light ? android.graphics.Color.WHITE : android.graphics.Color.rgb(49, 53, 62),
+                        light ? android.graphics.Color.rgb(232, 226, 209) : android.graphics.Color.rgb(23, 26, 32),
+                        stroke, 14));
+                button.setTextColor(text);
             }
         }
-        int text = light ? android.graphics.Color.rgb(48,43,32) : android.graphics.Color.rgb(245,240,220);
-        TextView[] labels = {tvClock, tvDate, tvSongName, tvArtist};
-        for (TextView label : labels) if (label != null) label.setTextColor(text);
+        if (btnPlay != null) {
+            btnPlay.setBackground(makeSurface(
+                    light ? accent : android.graphics.Color.rgb(242, 216, 135),
+                    light ? accent : android.graphics.Color.rgb(164, 125, 36),
+                    accent, 14));
+            btnPlay.setTextColor(android.graphics.Color.BLACK);
+        }
+
+        findViewById(R.id.weatherPanel).setVisibility(p.getBoolean("show_weather", true) ? android.view.View.VISIBLE : android.view.View.GONE);
+        findViewById(R.id.centerPanel).setVisibility(p.getBoolean("show_car", true) ? android.view.View.VISIBLE : android.view.View.GONE);
+        findViewById(R.id.tirePanel).setVisibility(p.getBoolean("show_tyres", true) ? android.view.View.VISIBLE : android.view.View.GONE);
+        findViewById(R.id.bottomBar).setVisibility(p.getBoolean("show_dock", true) ? android.view.View.VISIBLE : android.view.View.GONE);
         tvSpeed.setVisibility(p.getBoolean("show_speed", true) ? android.view.View.VISIBLE : android.view.View.GONE);
         int musicVisibility = p.getBoolean("show_music", true) ? android.view.View.VISIBLE : android.view.View.GONE;
         tvSongName.setVisibility(musicVisibility);
