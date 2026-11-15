@@ -502,7 +502,7 @@ public class MainActivity extends Activity {
             hero.setBackground(makeSurface(heroTop, heroBottom, accent, 24));
         }
 
-        TextView[] primaryText = {tvClock, tvSongName, tvFrontTires, tvRearTires, tvWeatherTemp, tvWeatherCity};
+        TextView[] primaryText = {tvClock, tvSongName, findViewById(R.id.tvFrontTires), findViewById(R.id.tvRearTires), findViewById(R.id.tvWeatherTemp), findViewById(R.id.tvWeatherCity)};
         for (TextView label : primaryText) if (label != null) label.setTextColor(text);
         TextView[] mutedText = {tvDate, tvArtist, findViewById(R.id.tvWeatherCondition)};
         for (TextView label : mutedText) if (label != null) label.setTextColor(muted);
