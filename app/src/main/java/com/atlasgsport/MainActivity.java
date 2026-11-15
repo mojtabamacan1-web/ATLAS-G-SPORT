@@ -264,14 +264,37 @@ public class MainActivity extends Activity {
 
         tvClock.setText(clockFormat.format(now));
         boolean persian = !"en".equals(getSharedPreferences("atlas_settings", MODE_PRIVATE).getString("language", "fa"));
-        if (persian && android.os.Build.VERSION.SDK_INT >= 24) {
-            android.icu.text.SimpleDateFormat persianFormat =
-                    new android.icu.text.SimpleDateFormat("yyyy/MM/dd", new android.icu.util.ULocale("fa_IR"));
-            persianFormat.setCalendar(new android.icu.util.PersianCalendar(new android.icu.util.ULocale("fa_IR")));
-            tvDate.setText(persianFormat.format(now));
+        if (persian) {
+            java.util.Calendar calendar = java.util.Calendar.getInstance();
+            calendar.setTime(now);
+            int[] jalali = toJalali(calendar.get(java.util.Calendar.YEAR),
+                    calendar.get(java.util.Calendar.MONTH) + 1,
+                    calendar.get(java.util.Calendar.DAY_OF_MONTH));
+            tvDate.setText(String.format(Locale.US, "%04d/%02d/%02d", jalali[0], jalali[1], jalali[2]));
         } else {
             tvDate.setText(dateFormat.format(now));
         }
+    }
+
+    private int[] toJalali(int gy, int gm, int gd) {
+        int[] monthDays = {0,31,59,90,120,151,181,212,243,273,304,334};
+        int jy;
+        if (gy > 1600) { jy = 979; gy -= 1600; }
+        else { jy = 0; gy -= 621; }
+        int gy2 = (gm > 2) ? gy + 1 : gy;
+        int days = 365 * gy + (gy2 + 3) / 4 - (gy2 + 99) / 100
+                + (gy2 + 399) / 400 - 80 + gd + monthDays[gm - 1];
+        jy += 33 * (days / 12053);
+        days %= 12053;
+        jy += 4 * (days / 1461);
+        days %= 1461;
+        if (days > 365) {
+            jy += (days - 1) / 365;
+            days = (days - 1) % 365;
+        }
+        int jm = (days < 186) ? 1 + days / 31 : 7 + (days - 186) / 30;
+        int jd = 1 + ((days < 186) ? days % 31 : (days - 186) % 30);
+        return new int[]{jy, jm, jd};
     }
 
     private void fetchWeather(Location location) {
