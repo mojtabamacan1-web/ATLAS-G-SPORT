@@ -80,7 +80,12 @@ public class CustomizationActivity extends Activity {
         addToggle(content,s("نمایش سرعت‌سنج","Speedometer"),"show_speed",true,fg);
         addToggle(content,s("پنل موسیقی","Music player"),"show_music",true,fg);
 
-        section(content,s("ویرایش چیدمان داشبورد","DASHBOARD LAYOUT"),fg);\n        Button editor = button(s("باز کردن ویرایشگر ابزارک‌ها","OPEN WIDGET EDITOR"),card,fg);\n        editor.setOnClickListener(v -> startActivity(new android.content.Intent(this, DashboardEditorActivity.class)));\n        content.addView(editor,params(-1,dp(52)));\n\n        section(content,s("پروفایل‌های داشبورد","DASHBOARD PROFILES"),fg);
+        section(content,s("ویرایش چیدمان داشبورد","DASHBOARD LAYOUT"),fg);
+        Button editor = button(s("باز کردن ویرایشگر ابزارک‌ها","OPEN WIDGET EDITOR"),card,fg);
+        editor.setOnClickListener(v -> startActivity(new android.content.Intent(this, DashboardEditorActivity.class)));
+        content.addView(editor,params(-1,dp(52)));
+
+        section(content,s("پروفایل‌های داشبورد","DASHBOARD PROFILES"),fg);
         LinearLayout profiles = row(content);
         addButton(profiles,s("ذخیره پروفایل","Save profile"),card,fg,this::saveProfile);
         addButton(profiles,s("بازیابی پروفایل","Load profile"),card,fg,this::loadProfile);
