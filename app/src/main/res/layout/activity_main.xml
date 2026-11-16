@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.12" />
+        app:layout_constraintGuide_percent="0.14" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineBottom"
@@ -45,9 +45,9 @@
                 android:layout_height="wrap_content"
                 android:text="ATLAS G  /  SPORT"
                 android:textColor="@color/luxury_gold"
-                android:textSize="18sp"
+                android:textSize="21sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.08"/>
+                android:letterSpacing="0.10"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -76,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:text="20:45"
                 android:textColor="@color/luxury_cream"
-                android:textSize="25sp"
+                android:textSize="27sp"
                 android:textStyle="bold"/>
             <TextView
                 android:id="@+id/tvDate"
@@ -188,9 +188,9 @@
             android:layout_marginTop="13dp"
             android:text="سایپا  •  اطلس G"
             android:textColor="@color/luxury_gold"
-            android:textSize="15sp"
+            android:textSize="17sp"
             android:textStyle="bold"
-            android:letterSpacing="0.12"/>
+            android:letterSpacing="0.14"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
