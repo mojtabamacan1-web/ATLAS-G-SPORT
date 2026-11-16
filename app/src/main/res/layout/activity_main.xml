@@ -25,7 +25,7 @@
         android:id="@+id/header"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@drawable/bg_panel_glass"
+        android:background="@drawable/bg_header_brand"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="18dp"
@@ -52,7 +52,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="DRIVE YOUR STYLE"
+                android:text="داشبورد هوشمند اطلس G"
                 android:textColor="#A6A9B1"
                 android:textSize="9sp"
                 android:letterSpacing="0.18"/>
@@ -62,7 +62,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="18dp"
-            android:text="● GPS   ◉ Wi-Fi   ᛒ BT"
+            android:text="سامانه چندرسانه‌ای خودرو"
             android:textColor="@color/luxury_cream"
             android:textSize="11sp"/>
         <LinearLayout
@@ -105,7 +105,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="WEATHER  /  آب‌وهوا"
+            android:text="آب‌وهوا"
             android:textColor="@color/luxury_gold"
             android:textSize="10sp"
             android:textStyle="bold"/>
@@ -150,7 +150,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:gravity="center"
-            android:text="LIVE FORECAST"
+            android:text="پیش‌بینی وضعیت هوا"
             android:textColor="#B5A16B"
             android:textSize="9sp"
             android:letterSpacing="0.12"/>
@@ -186,7 +186,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="top|center_horizontal"
             android:layout_marginTop="13dp"
-            android:text="SAIPA  •  ATLAS G"
+            android:text="سایپا  •  اطلس G"
             android:textColor="@color/luxury_gold"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -196,7 +196,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center_horizontal"
             android:layout_marginBottom="10dp"
-            android:text="URBAN CROSSOVER  /  SPORT EDITION"
+            android:text="نسخه اسپرت  •  داشبورد اختصاصی"
             android:textColor="#8F939D"
             android:textSize="9sp"
             android:letterSpacing="0.14"/>
@@ -231,7 +231,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TPMS  /  تایرها"
+            android:text="فشار باد تایرها"
             android:textColor="@color/luxury_gold"
             android:textSize="11sp"
             android:textStyle="bold"/>
@@ -272,7 +272,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
             android:gravity="center"
-            android:text="● وضعیت نامشخص"
+            android:text="● اطلاعات تایر در دسترس نیست"
             android:textColor="@color/luxury_gold"
             android:textSize="10sp"/>
     </LinearLayout>
@@ -297,7 +297,7 @@
             android:layout_weight="1.05"
             android:background="@drawable/bg_control_primary"
             android:gravity="center"
-            android:text="◉  0\nkm/h"
+            android:text="۰\nkm/h"
             android:textColor="#17140B"
             android:textSize="18sp"
             android:textStyle="bold"/>
