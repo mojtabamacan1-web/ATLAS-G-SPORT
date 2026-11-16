@@ -63,14 +63,30 @@ public class CustomizationActivity extends Activity {
         addButton(languages,"فارسی",card,fg,()->setLanguage("fa"));
         addButton(languages,"English",card,fg,()->setLanguage("en"));
 
-        section(content,s("پوسته و ظاهر","THEME & APPEARANCE"),fg);
-        LinearLayout themes = row(content);
-        addButton(themes,s("مشکی و کرم","Dark · Black & Cream"),card,fg,()->setTheme("dark"));
-        addButton(themes,s("سفید و کرم","Light · White & Cream"),card,fg,()->setTheme("light"));
+        section(content,s("گالری تم‌های آماده","PREMIUM THEME GALLERY"),fg);
+        addTheme(content,s("مشکی طلایی لوکس","Luxury Black & Gold"),"#D4AF37","dark");
+        addTheme(content,s("سفید کرم مینیمال","Ivory Cream"),"#B99A5B","light");
+        addTheme(content,s("قرمز مسابقه‌ای","Racing Red"),"#E34848","dark");
+        addTheme(content,s("آبی نئونی","Neon Blue"),"#39A9FF","dark");
+        addTheme(content,s("سبز زمردی","Emerald Green"),"#36B88A","dark");
+        addTheme(content,s("بنفش شب","Midnight Violet"),"#A78BFA","dark");
+        addTheme(content,s("نارنجی اسپرت","Sport Orange"),"#F28C38","dark");
 
-        section(content,s("رنگ تأکیدی","ACCENT COLOR"),fg);
+        section(content,s("رنگ تأکیدی دلخواه","CUSTOM ACCENT COLOR"),fg);
         LinearLayout colors = row(content);
         addColor(colors,"#D4AF37"); addColor(colors,"#C58B5A"); addColor(colors,"#55A7A0"); addColor(colors,"#8D83C7"); addColor(colors,"#D46A6A");
+
+        section(content,s("اندازه نوشته‌ها","TEXT SIZE"),fg);
+        LinearLayout fontSizes = row(content);
+        addButton(fontSizes,s("کوچک","Small"),card,fg,()->setScale(0.90f));
+        addButton(fontSizes,s("معمولی","Normal"),card,fg,()->setScale(1.0f));
+        addButton(fontSizes,s("درشت","Large"),card,fg,()->setScale(1.15f));
+
+        section(content,s("گردی پنل‌ها","PANEL CORNERS"),fg);
+        LinearLayout corners = row(content);
+        addButton(corners,s("ظریف","Sharp"),card,fg,()->setRadius(12));
+        addButton(corners,s("متعادل","Balanced"),card,fg,()->setRadius(22));
+        addButton(corners,s("گرد و لوکس","Rounded"),card,fg,()->setRadius(30));
 
         section(content,s("مدیریت پنل‌های صفحه اصلی","HOME WIDGETS"),fg);
         addToggle(content,s("پنل آب‌وهوا","Weather panel"),"show_weather",true,fg);
@@ -103,6 +119,20 @@ public class CustomizationActivity extends Activity {
         setContentView(root);
     }
 
+    private void addTheme(LinearLayout parent,String label,String color,String mode) {
+        Button b=button("✦  "+label,Color.parseColor(color),Color.BLACK);
+        b.setTextSize(14);
+        b.setOnClickListener(v->{prefs.edit().putString("theme",mode).putString("accent",color).putString("theme_name",label).apply();accent=Color.parseColor(color);buildUi();});
+        parent.addView(b,params(-1,dp(48)));
+    }
+    private void setScale(float value) {
+        prefs.edit().putFloat("text_scale",value).apply();
+        new AlertDialog.Builder(this).setMessage(s("اندازه نوشته‌ها ذخیره شد. برای مشاهده تغییرات به داشبورد برگرد.","Text size saved. Return to the dashboard to see the change.")).setPositiveButton("OK",null).show();
+    }
+    private void setRadius(int value) {
+        prefs.edit().putInt("panel_radius",value).apply();
+        new AlertDialog.Builder(this).setMessage(s("گردی پنل‌ها ذخیره شد.","Panel corner style saved.")).setPositiveButton("OK",null).show();
+    }
     private void setTheme(String value) { prefs.edit().putString("theme",value).apply(); buildUi(); }
     private void setLanguage(String value) {
         prefs.edit().putString("language",value).apply();
