@@ -524,7 +524,7 @@ public class MainActivity extends Activity {
             TextView label = findViewById(id);
             if (label != null) label.setTextColor(id == R.id.tvSpeed ? android.graphics.Color.BLACK : gold);
         }
-        android.view.View speed = findViewById(R.id.tvSpeed);
+        TextView speed = findViewById(R.id.tvSpeed);
         if (speed != null) {
             android.graphics.drawable.GradientDrawable speedDial =
                     new android.graphics.drawable.GradientDrawable(
