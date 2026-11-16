@@ -525,10 +525,22 @@ public class MainActivity extends Activity {
             if (label != null) label.setTextColor(id == R.id.tvSpeed ? android.graphics.Color.BLACK : gold);
         }
         android.view.View speed = findViewById(R.id.tvSpeed);
-        if (speed != null) speed.setBackground(makeSurface(
-                light ? accent : android.graphics.Color.rgb(242, 216, 135),
-                light ? accent : android.graphics.Color.rgb(164, 125, 36),
-                light ? accent : android.graphics.Color.rgb(255, 231, 165), 16));
+        if (speed != null) {
+            android.graphics.drawable.GradientDrawable speedDial =
+                    new android.graphics.drawable.GradientDrawable(
+                            android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+                            new int[] {
+                                    light ? android.graphics.Color.rgb(255, 250, 225) : android.graphics.Color.rgb(48, 39, 19),
+                                    light ? android.graphics.Color.rgb(232, 211, 151) : android.graphics.Color.rgb(17, 19, 23)
+                            });
+            speedDial.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            speedDial.setStroke(
+                    Math.max(2, Math.round(2 * getResources().getDisplayMetrics().density)),
+                    accent);
+            speed.setBackground(speedDial);
+            speed.setTextColor(text);
+            speed.setElevation(8f * getResources().getDisplayMetrics().density);
+        }
 
         int[] buttonIds = {R.id.btnMap, R.id.btnApps, R.id.btnSettings, R.id.btnAbout, R.id.btnPrev, R.id.btnNext};
         for (int id : buttonIds) {
