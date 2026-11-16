@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -37,6 +39,9 @@ public class MainActivity extends Activity {
 
     private LocationManager locationManager;
     private long lastWeatherFetchAt = 0;
+    private MediaPlayer localPlayer;
+    private final java.util.ArrayList<Uri> localPlaylist = new java.util.ArrayList<>();
+    private int localTrackIndex = -1;
 
     private final Handler handler =
             new Handler(Looper.getMainLooper());
@@ -77,6 +82,7 @@ public class MainActivity extends Activity {
     private final MediaAccessService.MediaUpdateListener
             mediaUpdateListener = (title, artist, packageName, isPlaying) -> {
 
+        if (localPlayer != null) return;
         tvSongName.setText(title);
 
         tvArtist.setText(
@@ -176,34 +182,131 @@ public class MainActivity extends Activity {
         });
 
         // پخش و توقف موسیقی
+        tvSongName.setOnClickListener(v -> openLocalMusicPicker());
+
         btnPlay.setOnClickListener(v -> {
+            if (localPlayer != null) {
+                if (localPlayer.isPlaying()) localPlayer.pause();
+                else localPlayer.start();
+                btnPlay.setText(localPlayer.isPlaying() ? "Ⅱ" : "▶");
+                return;
+            }
             if (!hasNotificationAccess()) {
                 openNotificationSettings();
                 return;
             }
-
             MediaAccessService.playPause();
         });
 
         // آهنگ قبلی
         btnPrev.setOnClickListener(v -> {
-            if (!hasNotificationAccess()) {
-                openNotificationSettings();
-                return;
-            }
-
+            if (!localPlaylist.isEmpty()) { playLocalTrack(localTrackIndex <= 0 ? localPlaylist.size() - 1 : localTrackIndex - 1); return; }
+            if (!hasNotificationAccess()) { openNotificationSettings(); return; }
             MediaAccessService.previous();
         });
 
         // آهنگ بعدی
         btnNext.setOnClickListener(v -> {
-            if (!hasNotificationAccess()) {
-                openNotificationSettings();
-                return;
-            }
-
+            if (!localPlaylist.isEmpty()) { playLocalTrack((localTrackIndex + 1) % localPlaylist.size()); return; }
+            if (!hasNotificationAccess()) { openNotificationSettings(); return; }
             MediaAccessService.next();
         });
+    }
+
+
+    private void openLocalMusicPicker() {
+        try {
+            Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            picker.addCategory(Intent.CATEGORY_OPENABLE);
+            picker.setType("audio/*");
+            picker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            startActivityForResult(picker, 410);
+        } catch (Exception e) {
+            showToast("انتخاب فایل موسیقی در دسترس نیست");
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != 410 || resultCode != RESULT_OK || data == null) return;
+        localPlaylist.clear();
+        try {
+            if (data.getClipData() != null) {
+                android.content.ClipData clips = data.getClipData();
+                for (int i = 0; i < clips.getItemCount(); i++) {
+                    Uri uri = clips.getItemAt(i).getUri();
+                    getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    localPlaylist.add(uri);
+                }
+            } else if (data.getData() != null) {
+                Uri uri = data.getData();
+                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                localPlaylist.add(uri);
+            }
+            if (!localPlaylist.isEmpty()) playLocalTrack(0);
+        } catch (Exception e) {
+            showToast("خواندن فایل موسیقی ناموفق بود");
+        }
+    }
+
+    private void playLocalTrack(int index) {
+        if (index < 0 || index >= localPlaylist.size()) return;
+        releaseLocalPlayer();
+        localTrackIndex = index;
+        Uri uri = localPlaylist.get(index);
+        try {
+            MediaMetadataRetriever metadata = new MediaMetadataRetriever();
+            String title = "آهنگ انتخاب‌شده";
+            String artist = "کتابخانه موسیقی";
+            try {
+                metadata.setDataSource(this, uri);
+                String t = metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+                String a = metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                if (t != null && !t.trim().isEmpty()) title = t;
+                if (a != null && !a.trim().isEmpty()) artist = a;
+            } catch (Exception ignored) {
+            } finally {
+                try { metadata.release(); } catch (Exception ignored) {}
+            }
+            tvSongName.setText(title);
+            tvArtist.setText(artist);
+            localPlayer = new MediaPlayer();
+            localPlayer.setOnPreparedListener(player -> {
+                player.start();
+                btnPlay.setText("Ⅱ");
+            });
+            localPlayer.setOnCompletionListener(player -> {
+                if (localPlaylist.size() > 1) playLocalTrack((localTrackIndex + 1) % localPlaylist.size());
+                else btnPlay.setText("▶");
+            });
+            localPlayer.setOnErrorListener((player, what, extra) -> {
+                showToast("پخش این فایل امکان‌پذیر نیست");
+                releaseLocalPlayer();
+                btnPlay.setText("▶");
+                return true;
+            });
+            localPlayer.setDataSource(this, uri);
+            localPlayer.prepareAsync();
+        } catch (Exception e) {
+            releaseLocalPlayer();
+            showToast("خطا در آماده‌سازی فایل موسیقی");
+        }
+    }
+
+    private void releaseLocalPlayer() {
+        if (localPlayer != null) {
+            try { if (localPlayer.isPlaying()) localPlayer.stop(); } catch (Exception ignored) {}
+            try { localPlayer.reset(); } catch (Exception ignored) {}
+            try { localPlayer.release(); } catch (Exception ignored) {}
+            localPlayer = null;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        releaseLocalPlayer();
+        super.onDestroy();
     }
 
     private boolean hasNotificationAccess() {
