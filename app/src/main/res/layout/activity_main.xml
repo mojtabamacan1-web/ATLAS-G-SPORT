@@ -200,18 +200,30 @@
             android:textColor="#8F939D"
             android:textSize="9sp"
             android:letterSpacing="0.14"/>
-        <ImageView
-            android:id="@+id/imgAtlas"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+        <LinearLayout
+            android:id="@+id/logoContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:paddingStart="18dp"
-            android:paddingTop="35dp"
-            android:paddingEnd="18dp"
-            android:paddingBottom="24dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/atlas_car"
-            android:contentDescription="Saipa Atlas G"/>
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="8dp">
+            <ImageView
+                android:id="@+id/imgAtlas"
+                android:layout_width="190dp"
+                android:layout_height="142dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_saipa_logo"
+                android:contentDescription="لوگوی سایپا"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SAIPA"
+                android:textColor="@color/luxury_cream"
+                android:textSize="19sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.30"/>
+        </LinearLayout>
     </FrameLayout>
 
     <LinearLayout
