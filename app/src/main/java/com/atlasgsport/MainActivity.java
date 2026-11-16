@@ -510,9 +510,14 @@ public class MainActivity extends Activity {
             android.widget.LinearLayout logoContainer = findViewById(R.id.logoContainer);
             if (logoContainer != null) {
                 String position = p.getString("saipa_logo_position", "center");
-                logoContainer.setGravity("left".equals(position) ? android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.LEFT
-                        : ("right".equals(position) ? android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.RIGHT
-                        : android.view.Gravity.CENTER));
+                android.widget.FrameLayout.LayoutParams containerParams =
+                        (android.widget.FrameLayout.LayoutParams) logoContainer.getLayoutParams();
+                containerParams.gravity = "left".equals(position)
+                        ? android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.LEFT
+                        : ("right".equals(position)
+                        ? android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.RIGHT
+                        : android.view.Gravity.CENTER);
+                logoContainer.setLayoutParams(containerParams);
             }
         }
 
