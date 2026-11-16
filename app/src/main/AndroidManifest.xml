@@ -8,8 +8,8 @@
     <application
         android:allowBackup="true"
         android:label="ATLAS G SPORT"
-        android:icon="@drawable/atlas_car"
-        android:roundIcon="@drawable/atlas_car"
+        android:icon="@drawable/ic_saipa_logo"
+        android:roundIcon="@drawable/ic_saipa_logo"
         android:theme="@style/Theme.AtlasGSport"
         android:usesCleartextTraffic="true">
 
