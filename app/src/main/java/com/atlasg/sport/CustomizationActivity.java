@@ -88,6 +88,18 @@ public class CustomizationActivity extends Activity {
         addButton(corners,s("متعادل","Balanced"),card,fg,()->setRadius(22));
         addButton(corners,s("گرد و لوکس","Rounded"),card,fg,()->setRadius(30));
 
+        section(content,s("اندازه لوگوی سایپا","SAIPA LOGO SIZE"),fg);
+        LinearLayout logoSizes = row(content);
+        addButton(logoSizes,s("کوچک","Small"),card,fg,()->setLogoScale(0.75f));
+        addButton(logoSizes,s("متوسط","Medium"),card,fg,()->setLogoScale(1.0f));
+        addButton(logoSizes,s("بزرگ","Large"),card,fg,()->setLogoScale(1.2f));
+
+        section(content,s("جایگاه لوگوی سایپا","SAIPA LOGO POSITION"),fg);
+        LinearLayout logoPositions = row(content);
+        addButton(logoPositions,s("چپ","Left"),card,fg,()->setLogoPosition("left"));
+        addButton(logoPositions,s("وسط","Center"),card,fg,()->setLogoPosition("center"));
+        addButton(logoPositions,s("راست","Right"),card,fg,()->setLogoPosition("right"));
+
         section(content,s("مدیریت پنل‌های صفحه اصلی","HOME WIDGETS"),fg);
         addToggle(content,s("پنل آب‌وهوا","Weather panel"),"show_weather",true,fg);
         addToggle(content,s("نمایش خودروی اطلس G","Atlas G vehicle panel"),"show_car",true,fg);
@@ -128,6 +140,14 @@ public class CustomizationActivity extends Activity {
     private void setScale(float value) {
         prefs.edit().putFloat("text_scale",value).apply();
         new AlertDialog.Builder(this).setMessage(s("اندازه نوشته‌ها ذخیره شد. برای مشاهده تغییرات به داشبورد برگرد.","Text size saved. Return to the dashboard to see the change.")).setPositiveButton("OK",null).show();
+    }
+    private void setLogoScale(float value) {
+        prefs.edit().putFloat("saipa_logo_scale", value).apply();
+        new AlertDialog.Builder(this).setMessage(s("اندازه لوگوی سایپا ذخیره شد.","Saipa logo size saved.")).setPositiveButton("OK",null).show();
+    }
+    private void setLogoPosition(String value) {
+        prefs.edit().putString("saipa_logo_position", value).apply();
+        new AlertDialog.Builder(this).setMessage(s("جایگاه لوگوی سایپا ذخیره شد.","Saipa logo position saved.")).setPositiveButton("OK",null).show();
     }
     private void setRadius(int value) {
         prefs.edit().putInt("panel_radius",value).apply();
