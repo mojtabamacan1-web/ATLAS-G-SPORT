@@ -500,6 +500,22 @@ public class MainActivity extends Activity {
                 v.setElevation(7f * getResources().getDisplayMetrics().density);
             }
         }
+        android.widget.ImageView saipaLogo = findViewById(R.id.imgAtlas);
+        if (saipaLogo != null) {
+            float logoScale = p.getFloat("saipa_logo_scale", 1.0f);
+            android.view.ViewGroup.LayoutParams logoParams = saipaLogo.getLayoutParams();
+            logoParams.width = (int)(190 * getResources().getDisplayMetrics().density * logoScale);
+            logoParams.height = (int)(142 * getResources().getDisplayMetrics().density * logoScale);
+            saipaLogo.setLayoutParams(logoParams);
+            android.widget.LinearLayout logoContainer = findViewById(R.id.logoContainer);
+            if (logoContainer != null) {
+                String position = p.getString("saipa_logo_position", "center");
+                logoContainer.setGravity("left".equals(position) ? android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.LEFT
+                        : ("right".equals(position) ? android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.RIGHT
+                        : android.view.Gravity.CENTER));
+            }
+        }
+
         android.view.View hero = findViewById(R.id.centerPanel);
         if (hero != null) {
             int heroTop = light ? android.graphics.Color.rgb(246, 242, 228) : android.graphics.Color.rgb(34, 40, 50);
