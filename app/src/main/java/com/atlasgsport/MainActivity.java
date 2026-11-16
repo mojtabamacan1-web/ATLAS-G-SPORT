@@ -484,6 +484,8 @@ public class MainActivity extends Activity {
         int panelTop = light ? android.graphics.Color.rgb(255, 254, 248) : android.graphics.Color.rgb(38, 42, 51);
         int panelBottom = light ? android.graphics.Color.rgb(237, 232, 216) : android.graphics.Color.rgb(15, 18, 24);
         int stroke = light ? android.graphics.Color.rgb(205, 190, 145) : android.graphics.Color.rgb(102, 91, 59);
+        int panelRadius = p.getInt("panel_radius", 22);
+        float textScale = p.getFloat("text_scale", 1.0f);
         int rootTop = light ? android.graphics.Color.rgb(250, 247, 236) : android.graphics.Color.rgb(13, 16, 22);
         int rootBottom = light ? android.graphics.Color.rgb(230, 224, 207) : android.graphics.Color.rgb(5, 7, 10);
 
@@ -494,7 +496,7 @@ public class MainActivity extends Activity {
         for (int id : cards) {
             android.view.View v = findViewById(id);
             if (v != null) {
-                v.setBackground(makeSurface(panelTop, panelBottom, stroke, 22));
+                v.setBackground(makeSurface(panelTop, panelBottom, stroke, panelRadius));
                 v.setElevation(7f * getResources().getDisplayMetrics().density);
             }
         }
@@ -502,18 +504,20 @@ public class MainActivity extends Activity {
         if (hero != null) {
             int heroTop = light ? android.graphics.Color.rgb(246, 242, 228) : android.graphics.Color.rgb(34, 40, 50);
             int heroBottom = light ? android.graphics.Color.rgb(225, 218, 198) : android.graphics.Color.rgb(8, 11, 17);
-            hero.setBackground(makeSurface(heroTop, heroBottom, accent, 26));
+            hero.setBackground(makeSurface(heroTop, heroBottom, accent, panelRadius + 4));
             hero.setElevation(12f * getResources().getDisplayMetrics().density);
         }
 
         TextView[] primaryText = {tvClock, tvSongName, findViewById(R.id.tvFrontTires), findViewById(R.id.tvRearTires), findViewById(R.id.tvWeatherTemp), findViewById(R.id.tvWeatherCity)};
         for (TextView label : primaryText) if (label != null) {
+            label.setTextSize(label.getTextSize() / getResources().getDisplayMetrics().scaledDensity * textScale);
             label.setTextColor(text);
             label.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
             label.setLetterSpacing(0.015f);
         }
         TextView[] mutedText = {tvDate, tvArtist, findViewById(R.id.tvWeatherCondition)};
         for (TextView label : mutedText) if (label != null) {
+            label.setTextSize(label.getTextSize() / getResources().getDisplayMetrics().scaledDensity * textScale);
             label.setTextColor(muted);
             label.setTypeface(android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL));
         }
